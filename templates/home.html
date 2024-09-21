@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Base de données des statistiques régionales</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}"> <!-- Lien vers votre fichier CSS -->
+</head>
+<body>
+
+    <div class="header-primary">
+        Statistiques régionales
+    </div>
+
+    <div class="header-secondary">
+        <div class="nav-links">
+            <a href="#accueil">Accueil</a>
+            <a href="#">Requêtes</a>
+            <a href="#apropos">A propos</a>
+            <a href="#connexion">Guide utilisateur</a>
+        </div>
+        <div class="search-bar">
+            <input type="text" placeholder="Rechercher...">
+            <button type="submit">Chercher</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="left-column">
+            <div class="left-section">
+                <h2>Carte de la Côte d'Ivoire</h2>
+               <!--<canvas id="mapCanvas"></canvas>  --> <!-- Ajout du canvas pour la carte -->
+            </div>
+
+            <div class="right-section">
+                <div class="box">
+                    <h3>Effectif de la population</h3>
+                    <div class="value">27,000,000</div>
+                </div>
+                <div class="box">
+                    <h3>Nombre d'établissements</h3>
+                    <div class="value">20,000</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="right-column">
+            <h2>Liste des régions</h2>
+            <ul class="region-list">
+                {% for region in regions %}
+                <li>{{ region }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <div class="bottom-container">
+        <div class="form-container">
+            <h3>Évolution de la population</h3>
+        </div>
+        <div class="form-container">
+            <h3>Education : Taux de scolarisation</h3>
+        </div>
+        <div class="form-container">
+            <h3>Population par tranche d'âge</h3>
+        </div>
+    </div>
+
+    <!-- Utilisation de json_script pour injecter les données de manière sécurisée -->
+    <script>
+        // Récupérer les données des régions en toute sécurité depuis json_script
+        var regionsCoords = {{ coord_list|tojson }};
+
+        // Afficher les coordonnées dans la console pour vérifier
+        console.log('Coordonnées des régions:', regionsCoords);
+
+        // Initialiser le canvas
+        var canvas = document.getElementById("mapCanvas");
+        var ctx = canvas.getContext("2d");
+
+        // Définir les dimensions du canvas
+        canvas.width = window.innerWidth;
+        canvas.height = 500;
+
+        // Fonction pour ajuster les coordonnées aux dimensions du canvas
+        function adjustCoordinates(coords) {
+            var scale = 3000; // Échelle pour rendre la carte visible
+            var offsetX = canvas.width / 2; // Centre horizontal
+            var offsetY = canvas.height / 2; // Centre vertical
+
+            return coords.map(function(coord) {
+                return [coord[0] * scale + offsetX, -coord[1] * scale + offsetY]; // Inverser l'axe Y
+            });
+        }
+
+        // Fonction pour dessiner une région
+        function drawRegion(coords) {
+            ctx.beginPath();
+            var adjustedCoords = adjustCoordinates(coords);
+
+            // Début du tracé
+            ctx.moveTo(adjustedCoords[0][0], adjustedCoords[0][1]);
+
+            // Tracer les lignes entre les points
+            for (var i = 1; i < adjustedCoords.length; i++) {
+                ctx.lineTo(adjustedCoords[i][0], adjustedCoords[i][1]);
+            }
+
+            ctx.closePath();
+            ctx.stroke(); // Dessiner la bordure
+            ctx.fillStyle = 'rgba(0, 150, 0, 0.5)'; // Couleur de remplissage
+            ctx.fill(); // Remplir la région
+        }
+
+        // Dessiner toutes les régions
+        regionsCoords.forEach(function(coords) {
+            drawRegion(coords);
+        });
+    </script>
+    
+</body>
+</html>
