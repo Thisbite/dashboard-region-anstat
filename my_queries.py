@@ -1,5 +1,6 @@
 from mysql.connector import Error
 import config as cf 
+import pandas as pd
 
 def options_regions():
     try:
@@ -17,5 +18,10 @@ def options_regions():
     
     regions=[row[0] for row in regions]
     return regions
+
+
+def get_data(filepath):
+    df = pd.read_csv(filepath, sep=',')
+    return df
 
 

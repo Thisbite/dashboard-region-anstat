@@ -4,36 +4,95 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Résultats</title>
-  <!-- Inside result.html -->
-<link rel="stylesheet" href="{{ url_for('static', filename='css/result.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/result.css') }}">
+    <style>
+        .dropzone {
+            border: 2px dashed #004085;
+            padding: 10px;
+            width: 100%;
+            min-height: 100px;
+            margin-bottom: 20px;
+        }
+        .draggable {
+            cursor: move;
+            padding: 8px;
+            background-color: #f8f9fa;
+            border: 1px solid #004085;
+            display: inline-block;
+            margin-right: 5px;
+            margin-bottom: 5px;
+        }
+    </style>
 </head>
 <body>
-    <h1>Résultats filtrés</h1>
+    <h1>Créer un tableau croisé dynamique</h1>
 
-    <!-- Affichage des données filtrées -->
-    <table>
-        <thead>
-            <tr>
-                <th>Indicateur</th>
-                <th>Région</th>
-                <th>Département</th>
-                <th>Sous-préfecture</th>
-                <th>Valeur</th>
-                <!-- Ajouter d'autres colonnes si nécessaire -->
-            </tr>
-        </thead>
-        <tbody>
-            {% for row in df.itertuples() %}
-                <tr>
-                    <td>{{ row.nom_indicateur }}</td>
-                    <td>{{ row.nom_region }}</td>
-                    <td>{{ row.nom_departement }}</td>
-                    <td>{{ row.nom_sousprefecture }}</td>
-                    <td>{{ row.Valeur }}</td>
-                    <!-- Ajouter d'autres colonnes si nécessaire -->
-                </tr>
+    <!-- Liste des colonnes disponibles à glisser -->
+    <div>
+        <h3>Colonnes disponibles :</h3>
+        <div id="available-columns">
+            {% for col in available_columns %}
+                <div class="draggable" draggable="true">{{ col }}</div>
             {% endfor %}
-        </tbody>
-    </table>
+        </div>
+    </div>
+
+    <!-- Zone de dépôt pour créer le tableau croisé dynamique -->
+    <div>
+        <h3>Glissez les colonnes ici :</h3>
+        <div id="dropzone" class="dropzone"></div>
+    </div>
+
+    <!-- Placeholder for dynamically generated pivot table -->
+    <h3>Résultat :</h3>
+    <div id="pivot-result"></div>
+
+    <script>
+        const draggables = document.querySelectorAll('.draggable');
+        const dropzone = document.getElementById('dropzone');
+        
+        draggables.forEach(draggable => {
+            draggable.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('text', e.target.textContent);
+            });
+        });
+
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+        });
+
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const col = e.dataTransfer.getData('text');
+            const columnDiv = document.createElement('div');
+            columnDiv.textContent = col;
+            columnDiv.classList.add('draggable');
+            dropzone.appendChild(columnDiv);
+            
+            // Dynamically update the pivot table based on dropped columns
+            updatePivotTable();
+        });
+
+        function updatePivotTable() {
+            const selectedColumns = Array.from(dropzone.children).map(col => col.textContent);
+            
+            console.log('Colonnes sélectionnées :', selectedColumns);  // Ajoute un log pour vérifier les colonnes
+            
+            fetch('/generate_pivot_table', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ columns: selectedColumns })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Données reçues :', data);  // Ajoute un log pour vérifier les données reçues
+                const resultDiv = document.getElementById('pivot-result');
+                resultDiv.innerHTML = data.table_html;
+            });
+        }
+        
+    </script>
 </body>
 </html>

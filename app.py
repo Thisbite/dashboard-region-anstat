@@ -1,5 +1,7 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, session
 from flask_sqlalchemy import SQLAlchemy
+from flask import jsonify
+
 from flask_migrate import Migrate
 import os
 import logging
@@ -53,65 +55,50 @@ def get_data(filepath):
 # Route pour afficher la page de requête
 @app.route('/request_indicateur', methods=['GET', 'POST'])
 def request_indicateur():
-    # Chargement des données
+    # Load the data
     xpath = "region_poro1.csv"
     df = get_data(xpath)
-    indicateurs = df["nom_indicateur"].sort_values().unique()  # Obtenir les indicateurs
-    dict_niveau = {}
+    indicateurs = df["nom_indicateur"].sort_values().unique()
 
-    # Gestion du formulaire
     if request.method == 'POST':
         indicateur_SELECT = request.form.get('indicateur')
-        region_SELECT = request.form.get('region')
-        departement_SELECT = request.form.get('departement')
-        sp_SELECT = request.form.get('sous_prefecture')
-        Bouton_recherche = request.form.get('recherche')
 
         if indicateur_SELECT:
-            # Filtrer les données par indicateur sélectionné
-            df = df[df['nom_indicateur'] == indicateur_SELECT]
-            df = df.dropna(axis=1, how='all')  # Supprime les colonnes vides
+            # Filter the data based on the selected indicator
+            df_filtered = df[df['nom_indicateur'] == indicateur_SELECT]
+            
+            # Drop columns where all values are NaN
+            df_filtered = df_filtered.dropna(axis=1, how='all')
 
-            # Obtenir les colonnes de niveau de désagrégation
-            liste_col = list(df.columns)
-            if 'Annee' in liste_col:
-                start = liste_col.index('Annee')
-                liste_niveau_desagregation = liste_col[start:-1]
-            else:
-                flash("La colonne 'Annee' est manquante dans les données.", "error")
+            # Store filtered dataframe in session as JSON string
+            session['df_filtered'] = df_filtered.to_json()
 
-            # Filtrage par région
-            if region_SELECT:
-                df = df[df['nom_region'] == region_SELECT]
+            # Get available columns for drag and drop
+            available_columns = list(df_filtered.columns)
+            return render_template('result.html', available_columns=available_columns)
 
-                # Filtrage par département
-                if departement_SELECT:
-                    df = df[df['nom_departement'] == departement_SELECT]
+    return render_template('requete_indicateur.html', indicateurs=indicateurs)
 
-                    # Filtrage par sous-préfecture
-                    if sp_SELECT:
-                        df = df[df['nom_sousprefecture'] == sp_SELECT]
+# Route pour générer le tableau croisé
+@app.route('/generate_pivot_table', methods=['POST'])
+def generate_pivot_table():
+    data = request.get_json()
+    selected_columns = data.get('columns', [])
 
-            # Application des filtres dynamiques selon les niveaux de désagrégation
-            for i, niveau in enumerate(liste_niveau_desagregation):
-                dict_niveau[f"niveau{i}"] = request.form.get(f"niveau{i}")
-                if dict_niveau[f"niveau{i}"]:
-                    df = df[df[niveau] == dict_niveau[f"niveau{i}"]]
+    # Reload filtered dataframe from session
+    df_filtered_json = session.get('df_filtered', None)
 
-            if Bouton_recherche:
-                # Vérifier si le DataFrame filtré n'est pas vide
-                if df.empty:
-                    flash("Désolé, aucune donnée disponible pour la sélection actuelle.", "error")
-                else:
-                    return render_template('result.html', df=df)  # Affiche les résultats dans un template HTML
+    if df_filtered_json:
+        df = pd.read_json(df_filtered_json)
+        
+        if selected_columns:
+            # Generate the pivot table based on selected columns
+            pivot_table = pd.pivot_table(df, values='Valeur', index=selected_columns, aggfunc='sum')
+            pivot_html = pivot_table.to_html(classes='table table-bordered')
 
-    # Variables à envoyer au template pour affichage
-    regions = df["nom_region"].sort_values().unique().tolist()
-    departements = df["nom_departement"].sort_values().unique() if 'nom_departement' in df.columns else []
-    sous_prefectures = df["nom_sousprefecture"].sort_values().unique() if 'nom_sousprefecture' in df.columns else []
+            return jsonify({"table_html": pivot_html})
 
-    return render_template('requete_indicateur.html', indicateurs=indicateurs, regions=regions, 
-                           departements=departements, sous_prefectures=sous_prefectures)
+    return jsonify({"table_html": "<p>Aucune colonne sélectionnée</p>"})
 
 
 
