@@ -55,29 +55,67 @@ def get_data(filepath):
 # Route pour afficher la page de requête
 @app.route('/request_indicateur', methods=['GET', 'POST'])
 def request_indicateur():
-    # Load the data
+    # Charger les données
     xpath = "region_poro1.csv"
     df = get_data(xpath)
+    
+    # Extraire les options disponibles pour chaque filtre
     indicateurs = df["nom_indicateur"].sort_values().unique()
+    regions = df['nom_region'].sort_values().unique()
+    departements = df['nom_departement'].sort_values().unique()
+    sous_prefectures = df['nom_sousprefecture'].sort_values().unique()
 
     if request.method == 'POST':
+        # Récupérer les sélections de l'utilisateur
         indicateur_SELECT = request.form.get('indicateur')
+        region_SELECT = request.form.get('region')
+        departement_SELECT = request.form.get('departement')
+        sousprefecture_SELECT = request.form.get('sous_prefecture')
 
-        if indicateur_SELECT:
-            # Filter the data based on the selected indicator
-            df_filtered = df[df['nom_indicateur'] == indicateur_SELECT]
-            
-            # Drop columns where all values are NaN
-            df_filtered = df_filtered.dropna(axis=1, how='all')
+        # Commencer avec l'ensemble complet des données
+        df_filtered = df.drop(columns=['statut','id'], errors='ignore')
 
-            # Store filtered dataframe in session as JSON string
+        # Appliquer chaque filtre uniquement si une valeur est sélectionnée
+        if sousprefecture_SELECT:
+            df_filtered = df_filtered[df_filtered['nom_sousprefecture'] == sousprefecture_SELECT]
+            # Supprimer les colonnes 'nom_region' et 'nom_departement' si la sous-préfecture est sélectionnée
+            df_filtered = df_filtered.drop(columns=['nom_region', 'nom_departement'], errors='ignore')
+        # Si le département est sélectionné (et pas de sous-préfecture), on filtre par département
+# et on supprime la colonne région
+        elif departement_SELECT:
+            df_filtered = df_filtered[df_filtered['nom_departement'] == departement_SELECT]
+            # Supprimer la colonne 'nom_region' si le département est sélectionné
+            df_filtered = df_filtered.drop(columns=['nom_region'], errors='ignore')
+        elif region_SELECT:
+            df_filtered = df_filtered[df_filtered['nom_region'] == region_SELECT]
+
+        # Supprimer les colonnes contenant uniquement des valeurs NaN
+        df_filtered = df_filtered.dropna(axis=1, how='all')
+
+        # Vérifier si le DataFrame filtré est vide
+        if df_filtered.empty:
+            # Si aucun résultat n'est trouvé, renvoyer un message "Aucune donnée disponible"
+            message = "Aucune donnée disponible pour les critères sélectionnés."
+            return render_template('result.html', available_columns=[], message=message)
+        else:
+            # Stocker le DataFrame filtré dans la session (au format JSON)
             session['df_filtered'] = df_filtered.to_json()
 
-            # Get available columns for drag and drop
+            # Obtenir les colonnes disponibles pour la zone de dépôt
             available_columns = list(df_filtered.columns)
-            return render_template('result.html', available_columns=available_columns)
 
-    return render_template('requete_indicateur.html', indicateurs=indicateurs)
+            # Afficher la page résultat avec les colonnes disponibles et sans message d'erreur
+            return render_template('result.html', available_columns=available_columns, message="")
+
+    # Si GET, afficher la page de sélection avec les options de filtre
+    return render_template(
+        'requete_indicateur.html', 
+        indicateurs=indicateurs, 
+        regions=regions, 
+        departements=departements, 
+        sous_prefectures=sous_prefectures
+    )
+
 
 # Route pour générer le tableau croisé
 @app.route('/generate_pivot_table', methods=['POST'])
@@ -93,7 +131,7 @@ def generate_pivot_table():
         
         if selected_columns:
             # Generate the pivot table based on selected columns
-            pivot_table = pd.pivot_table(df, values='Valeur', index=selected_columns, aggfunc='sum')
+            pivot_table = pd.pivot_table(df, values='Valeur', index=selected_columns)
             pivot_html = pivot_table.to_html(classes='table table-bordered')
 
             return jsonify({"table_html": pivot_html})

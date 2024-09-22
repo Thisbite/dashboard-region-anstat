@@ -6,30 +6,61 @@
     <title>Résultats</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/result.css') }}">
     <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            padding: 20px;
+        }
+        h1, h3 {
+            color: #004085;
+        }
+        .frame {
+            border: 2px solid #004085;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            background-color: #fff;
+        }
         .dropzone {
             border: 2px dashed #004085;
             padding: 10px;
             width: 100%;
             min-height: 100px;
             margin-bottom: 20px;
+            background-color: #e9ecef;
+            position: relative;
+        }
+        .dropzone p {
+            color: #6c757d;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            margin: 0;
         }
         .draggable {
             cursor: move;
             padding: 8px;
-            background-color: #f8f9fa;
+            background-color: #e2e6ea;
             border: 1px solid #004085;
             display: inline-block;
             margin-right: 5px;
             margin-bottom: 5px;
+            border-radius: 4px;
+        }
+        .remove-btn {
+            margin-left: 10px;
+            color: red;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
-    <h1>Créer un tableau croisé dynamique</h1>
+    <h1>Effectuer un tableau</h1>
 
     <!-- Liste des colonnes disponibles à glisser -->
-    <div>
-        <h3>Colonnes disponibles :</h3>
+    <div class="frame">
+        <h3>Variables disponibles</h3>
         <div id="available-columns">
             {% for col in available_columns %}
                 <div class="draggable" draggable="true">{{ col }}</div>
@@ -38,19 +69,31 @@
     </div>
 
     <!-- Zone de dépôt pour créer le tableau croisé dynamique -->
-    <div>
-        <h3>Glissez les colonnes ici :</h3>
-        <div id="dropzone" class="dropzone"></div>
+    <div class="frame">
+        <h3>Différents niveaux de désagrégations de l'indicateur</h3>
+        <p>Pour chaque variable sélectionnée, faites glisser dans la section ci-dessous</p>
+        <div id="dropzone" class="dropzone">
+            <p>Faites glisser vos variables ici</p>
+        </div>
     </div>
 
     <!-- Placeholder for dynamically generated pivot table -->
-    <h3>Résultat :</h3>
-    <div id="pivot-result"></div>
+    <div class="frame">
+        <h3>Résultat</h3>
+        <div id="pivot-result">
+            {% if message %}
+                <p>{{ message }}</p>
+            {% else %}
+                <!-- Afficher le contenu du tableau pivot ici -->
+            {% endif %}
+        </div>
+    </div>
 
     <script>
         const draggables = document.querySelectorAll('.draggable');
         const dropzone = document.getElementById('dropzone');
-        
+        const dropzonePlaceholder = dropzone.querySelector('p');
+
         draggables.forEach(draggable => {
             draggable.addEventListener('dragstart', (e) => {
                 e.dataTransfer.setData('text', e.target.textContent);
@@ -64,19 +107,41 @@
         dropzone.addEventListener('drop', (e) => {
             e.preventDefault();
             const col = e.dataTransfer.getData('text');
+
+            // Retirer le placeholder si c'est le premier élément déposé
+            if (dropzonePlaceholder) {
+                dropzonePlaceholder.remove();
+            }
+
             const columnDiv = document.createElement('div');
             columnDiv.textContent = col;
             columnDiv.classList.add('draggable');
+            
+            // Ajout d'un bouton pour supprimer la variable
+            const removeBtn = document.createElement('span');
+            removeBtn.textContent = '✖';
+            removeBtn.classList.add('remove-btn');
+            removeBtn.onclick = () => {
+                columnDiv.remove();
+                updatePivotTable();
+                if (dropzone.children.length === 0) {
+                    dropzone.appendChild(dropzonePlaceholder);
+                }
+            };
+
+            columnDiv.appendChild(removeBtn);
             dropzone.appendChild(columnDiv);
             
-            // Dynamically update the pivot table based on dropped columns
+            // Mettre à jour le tableau croisé
             updatePivotTable();
         });
 
         function updatePivotTable() {
-            const selectedColumns = Array.from(dropzone.children).map(col => col.textContent);
-            
-            console.log('Colonnes sélectionnées :', selectedColumns);  // Ajoute un log pour vérifier les colonnes
+            const selectedColumns = Array.from(dropzone.children)
+                .filter(child => child.classList.contains('draggable'))
+                .map(col => col.firstChild.textContent);  // Utilisation de firstChild pour ignorer le bouton de suppression
+
+            console.log('Colonnes sélectionnées :', selectedColumns);  // Log pour vérifier les colonnes
             
             fetch('/generate_pivot_table', {
                 method: 'POST',
@@ -87,12 +152,11 @@
             })
             .then(response => response.json())
             .then(data => {
-                console.log('Données reçues :', data);  // Ajoute un log pour vérifier les données reçues
+                console.log('Données reçues :', data);  // Log pour vérifier les données reçues
                 const resultDiv = document.getElementById('pivot-result');
                 resultDiv.innerHTML = data.table_html;
             });
         }
-        
     </script>
 </body>
 </html>

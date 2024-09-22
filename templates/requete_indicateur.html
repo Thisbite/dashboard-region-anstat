@@ -4,61 +4,73 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Requête Indicateur</title>
-<!-- Inside requete_indicateur.html -->
-<link rel="stylesheet" href="{{ url_for('static', filename='css/request_indicateur.css') }}">
-
-
-
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/request_indicateur.css') }}">
 </head>
 <body>
-    <h1>Filtrer les indicateurs</h1>
+    <div class="container">
+        <h1>Filtrer les indicateurs</h1>
 
-    <form method="POST">
-        <!-- Sélection de l'indicateur -->
-        <label for="indicateur">Indicateur :</label>
-        <select name="indicateur" id="indicateur">
-            {% for indicateur in indicateurs %}
-                <option value="{{ indicateur }}">{{ indicateur }}</option>
-            {% endfor %}
-        </select>
+        <form method="POST" class="filter-form">
+            <!-- Cadre pour la sélection de l'indicateur -->
+            <div class="frame">
+                <label for="indicateur">Indicateur :</label>
+                <select name="indicateur" id="indicateur" required>
+                    <option value="">Sélectionner l'indicateur</option>
+                    {% for indicateur in indicateurs %}
+                        <option value="{{ indicateur }}">{{ indicateur }}</option>
+                    {% endfor %}
+                </select>
+            </div>
 
-        <!-- Sélection de la région -->
-        <label for="region">Région :</label>
-        <select name="region" id="region">
-            {% for region in regions %}
-                <option value="{{ region }}">{{ region }}</option>
-            {% endfor %}
-        </select>
+            <!-- Cadre pour la sélection de la région -->
+            <div class="frame">
+                <label for="region">Région :</label>
+                <select name="region" id="region">
+                    <option value="">Sélectionner la région</option>
+                    {% for region in regions %}
+                        <option value="{{ region }}">{{ region }}</option>
+                    {% endfor %}
+                </select>
+            </div>
 
-        <!-- Sélection du département -->
-        <label for="departement">Département :</label>
-        <select name="departement" id="departement">
-            {% for departement in departements %}
-                <option value="{{ departement }}">{{ departement }}</option>
-            {% endfor %}
-        </select>
+            <!-- Cadre pour la sélection du département -->
+            <div class="frame">
+                <label for="departement">Département :</label>
+                <select name="departement" id="departement">
+                    <option value="">Sélectionner le département</option>
+                    {% for departement in departements %}
+                        <option value="{{ departement }}">{{ departement }}</option>
+                    {% endfor %}
+                </select>
+            </div>
 
-        <!-- Sélection de la sous-préfecture -->
-        <label for="sous_prefecture">Sous-préfecture :</label>
-        <select name="sous_prefecture" id="sous_prefecture">
-            {% for sous_prefecture in sous_prefectures %}
-                <option value="{{ sous_prefecture }}">{{ sous_prefecture }}</option>
-            {% endfor %}
-        </select>
+            <!-- Cadre pour la sélection de la sous-préfecture -->
+            <div class="frame">
+                <label for="sous_prefecture">Sous-préfecture :</label>
+                <select name="sous_prefecture" id="sous_prefecture">
+                    <option value="">Sélectionner la sous-préfecture</option>
+                    {% for sous_prefecture in sous_prefectures %}
+                        <option value="{{ sous_prefecture }}">{{ sous_prefecture }}</option>
+                    {% endfor %}
+                </select>
+            </div>
 
-        <!-- Bouton de recherche -->
-        <button type="submit" name="recherche" value="true">Recherche</button>
-    </form>
+            <!-- Bouton de recherche -->
+            <div class="frame">
+                <button type="submit" name="recherche" value="true" class="btn-recherche">Recherche</button>
+            </div>
+        </form>
 
-    <!-- Affichage des messages Flash en cas d'erreur -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            <ul>
-                {% for category, message in messages %}
-                    <li class="{{ category }}">{{ message }}</li>
-                {% endfor %}
-            </ul>
-        {% endif %}
-    {% endwith %}
+        <!-- Affichage des messages Flash en cas d'erreur -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <ul class="flash-messages">
+                    {% for category, message in messages %}
+                        <li class="{{ category }}">{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+    </div>
 </body>
 </html>
