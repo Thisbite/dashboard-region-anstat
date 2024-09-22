@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Résultats</title>
+  <!-- Inside result.html -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/result.css') }}">
+</head>
+<body>
+    <h1>Résultats filtrés</h1>
+
+    <!-- Affichage des données filtrées -->
+    <table>
+        <thead>
+            <tr>
+                <th>Indicateur</th>
+                <th>Région</th>
+                <th>Département</th>
+                <th>Sous-préfecture</th>
+                <th>Valeur</th>
+                <!-- Ajouter d'autres colonnes si nécessaire -->
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in df.itertuples() %}
+                <tr>
+                    <td>{{ row.nom_indicateur }}</td>
+                    <td>{{ row.nom_region }}</td>
+                    <td>{{ row.nom_departement }}</td>
+                    <td>{{ row.nom_sousprefecture }}</td>
+                    <td>{{ row.Valeur }}</td>
+                    <!-- Ajouter d'autres colonnes si nécessaire -->
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

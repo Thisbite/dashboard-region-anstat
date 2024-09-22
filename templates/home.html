@@ -14,7 +14,7 @@
 
     <div class="header-secondary">
         <div class="nav-links">
-            <a href="#accueil">Accueil</a>
+            <a href="#accueil">Statistiques</a>
             <a href="#">Requêtes</a>
             <a href="#apropos">A propos</a>
             <a href="#connexion">Guide utilisateur</a>
@@ -28,8 +28,8 @@
     <div class="container">
         <div class="left-column">
             <div class="left-section">
-                <h2>Carte de la Côte d'Ivoire</h2>
-               <!--<canvas id="mapCanvas"></canvas>  --> <!-- Ajout du canvas pour la carte -->
+                {{ map_html|safe }}
+              
             </div>
 
             <div class="right-section">
