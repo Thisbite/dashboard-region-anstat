@@ -7,15 +7,26 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/request_indicateur.css') }}">
 </head>
 <body>
+    <div class="header-secondary">
+        <div class="nav-links">
+            <a href="{{ url_for('list_regions') }}">Statistiques</a>
+            <a href="{{ url_for('request_indicateur') }}">Requêtes</a>
+            <a href="#apropos">A propos</a>
+            <a href="#connexion">Guide utilisateur</a>
+        </div>
+       
+    </div>
+
+    
     <div class="container">
-        <h1>Filtrer les indicateurs</h1>
+        <h1>Recherche d'indicateurs</h1>
 
         <form method="POST" class="filter-form">
             <!-- Cadre pour la sélection de l'indicateur -->
             <div class="frame">
                 <label for="indicateur">Indicateur :</label>
                 <select name="indicateur" id="indicateur" required>
-                    <option value="">Sélectionner l'indicateur</option>
+                    <option value="">Saisie un mot clé pour l'indicateur</option>
                     {% for indicateur in indicateurs %}
                         <option value="{{ indicateur }}">{{ indicateur }}</option>
                     {% endfor %}
@@ -72,5 +83,52 @@
             {% endif %}
         {% endwith %}
     </div>
+
+
+    <script>
+        // Filtrer les départements en fonction de la région
+        document.getElementById('region').addEventListener('change', function() {
+            var region = this.value;
+            if (region) {
+                fetch('/get_departements/' + region)
+                    .then(response => response.json())
+                    .then(data => {
+                        var departementSelect = document.getElementById('departement');
+                        departementSelect.innerHTML = '<option value="">Sélectionnez un département</option>';
+                        data.forEach(function(departement) {
+                            var option = document.createElement('option');
+                            option.value = departement;
+                            option.textContent = departement;
+                            departementSelect.appendChild(option);
+                        });
+                        departementSelect.disabled = false;
+
+                        // Réinitialiser la sous-préfecture
+                        document.getElementById('sous_prefecture').innerHTML = '<option value="">Sélectionnez une sous-préfecture</option>';
+                        document.getElementById('sous_prefecture').disabled = true;
+                    });
+            }
+        });
+
+        // Filtrer les sous-préfectures en fonction du département
+        document.getElementById('departement').addEventListener('change', function() {
+            var departement = this.value;
+            if (departement) {
+                fetch('/get_sous_prefectures/' + departement)
+                    .then(response => response.json())
+                    .then(data => {
+                        var sousPrefectureSelect = document.getElementById('sous_prefecture');
+                        sousPrefectureSelect.innerHTML = '<option value="">Sélectionnez une sous-préfecture</option>';
+                        data.forEach(function(sous_prefecture) {
+                            var option = document.createElement('option');
+                            option.value = sous_prefecture;
+                            option.textContent = sous_prefecture;
+                            sousPrefectureSelect.appendChild(option);
+                        });
+                        sousPrefectureSelect.disabled = false;
+                    });
+            }
+        });
+    </script>
 </body>
 </html>

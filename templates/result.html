@@ -60,7 +60,7 @@
 
     <!-- Liste des colonnes disponibles à glisser -->
     <div class="frame">
-        <h3>Variables disponibles</h3>
+        <h3>Variables disponibles pour :{{indicateur_SELECT}}</h3>
         <div id="available-columns">
             {% for col in available_columns %}
                 <div class="draggable" draggable="true">{{ col }}</div>
@@ -87,6 +87,7 @@
                 <!-- Afficher le contenu du tableau pivot ici -->
             {% endif %}
         </div>
+        <button id="download-btn" class="btn btn-primary">Télécharger le tableau en Excel</button>
     </div>
 
     <script>
@@ -157,6 +158,15 @@
                 resultDiv.innerHTML = data.table_html;
             });
         }
+
+        document.getElementById('download-btn').addEventListener('click', () => {
+            const selectedColumns = Array.from(dropzone.children)
+                .filter(child => child.classList.contains('draggable'))
+                .map(col => col.firstChild.textContent);  // Utilisation de firstChild pour ignorer le bouton de suppression
+    
+            // Redirection vers la route de téléchargement avec les colonnes sélectionnées
+            window.location.href = `/download_excel?columns=${selectedColumns.join(',')}`;
+        });
     </script>
 </body>
 </html>
