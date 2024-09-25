@@ -105,6 +105,48 @@ button:hover {
     background-color: #003366;
 }
 
+/*
+Pour le data list et input
+*/
+/* Style pour le champ de saisie avec une apparence similaire à un select */
+input[type="text"]#indicateur-search {
+    width: 100%; /* Adapter à la largeur souhaitée */
+    padding: 10px; /* Ajouter un peu de padding pour ressembler à un select */
+    font-size: 16px; /* Taille de texte similaire à un select */
+    border: 1px solid #ccc; /* Bordure similaire à un select */
+    border-radius: 4px; /* Ajouter un léger arrondi */
+    background-color: #fff; /* Arrière-plan blanc */
+    appearance: none; /* Supprimer l'apparence par défaut de certains navigateurs */
+    -webkit-appearance: none; /* Pour les navigateurs basés sur Webkit */
+    -moz-appearance: none; /* Pour Firefox */
+    box-sizing: border-box; /* Assurer que le padding soit bien géré */
+}
+
+/* Style pour aligner le champ de saisie avec une icône de flèche, comme un select */
+input[type="text"]#indicateur-search {
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 20 20"><path fill="gray" d="M7 10l5 5 5-5H7z"/></svg>');
+    background-repeat: no-repeat;
+    background-position: right 10px center; /* Positionner l'icône à droite */
+    background-size: 12px; /* Ajuster la taille de l'icône */
+    padding-right: 30px; /* Laisser de la place pour l'icône */
+}
+
+/* Style pour la liste des suggestions */
+datalist {
+    border: 1px solid #ccc; /* Bordure similaire à un select */
+    background-color: #fff; /* Fond blanc */
+    font-size: 16px; /* Taille similaire à un select */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Ajouter une ombre pour le menu */
+}
+
+/* Optionnel : Style personnalisé pour les options suggérées */
+option {
+    padding: 10px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+
 /* Blue dashed frame for sections */
 .blue-dashed-frame {
     border: 2px dashed #0c29ff;
@@ -233,3 +275,27 @@ h1 {
     background-color: #f2dede;
     color: #a94442;
 }
+
+/* 
+Pour la liste de filtre des indicateurs
+*/
+.suggestions-box {
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    max-height: 200px;
+    overflow-y: auto;
+    position: absolute;
+    background-color: white;
+    width: 100%;
+    z-index: 1000;
+}
+
+.suggestion-item {
+    padding: 10px;
+    cursor: pointer;
+}
+
+.suggestion-item:hover {
+    background-color: #f0f0f0;
+}
+

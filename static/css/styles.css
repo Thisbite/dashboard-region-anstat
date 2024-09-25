@@ -9,14 +9,6 @@ body {
     background-color: #f4f4f4;
 }
 
-.header-primary {
-    background-color: #004085;
-    color: white;
-    padding: 20px;
-    text-align: center;
-    font-size: 24px;
-}
-
 .header-secondary {
     background-color: #f8f9fa;
     display: flex;

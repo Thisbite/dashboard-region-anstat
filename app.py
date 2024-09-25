@@ -7,6 +7,7 @@ import os
 import logging
 import my_queries as qr
 import data as dt
+import config as cf
 import pandas as pd
 
 
@@ -32,7 +33,7 @@ db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
 
-
+# On a une liste sur les régions de la CI, en effet elle est la page principale
 @app.route('/')
 def list_regions():
     regions = qr.options_regions()
@@ -52,34 +53,50 @@ def get_data(filepath):
     df = pd.read_csv(filepath, sep=',')
     return df
 
+
+def get_data_from_mysql():
+    # Configurer les informations de connexion à la base de données MySQL
+    conn = cf.create_connection()
+    # Requête SQL pour sélectionner toutes les données
+    query = "SELECT * FROM valeur_indicateur_libelle"
+
+    # Charger les données dans un DataFrame pandas
+    df = pd.read_sql(query, conn)
+
+    # Fermer la connexion
+    conn.close()
+
+    return df
+
 # Route pour récupérer les départements en fonction de la région sélectionnée
-@app.route('/get_departements/<region>')
-def get_departements(region):
-    df = get_data("region_poro1.csv")  # Charger les données
-    df_filtered = df[df['nom_region'] == region]
-    departements = df_filtered['nom_departement'].sort_values().unique()
+@app.route('/get_departements', methods=['GET'])
+def get_departements():
+    region = request.args.get('region')
+    df = get_data_from_mysql()  # Récupère les données
+    departements = df[df['nom_region'] == region]['nom_departement'].sort_values().unique()
     return jsonify(list(departements))
 
+
 # Route pour récupérer les sous-préfectures en fonction du département sélectionné
-@app.route('/get_sous_prefectures/<departement>')
-def get_sous_prefectures(departement):
-    df = get_data("region_poro1.csv")  # Charger les données
-    df_filtered = df[df['nom_departement'] == departement]
-    sous_prefectures = df_filtered['nom_sousprefecture'].sort_values().unique()
+@app.route('/get_sous_prefectures', methods=['GET'])
+def get_sous_prefectures():
+    departement = request.args.get('departement')
+    df = get_data_from_mysql()  # Récupère les données
+    sous_prefectures = df[df['nom_departement'] == departement]['nom_sousprefecture'].sort_values().unique()
     return jsonify(list(sous_prefectures))
+
 
 # Route pour afficher la page de requête
 @app.route('/request_indicateur', methods=['GET', 'POST'])
 def request_indicateur():
-    # Charger les données
-    xpath = "region_poro1.csv"
-    df = get_data(xpath)
-    
-    # Extraire les options disponibles pour chaque filtre
-    indicateurs = df["nom_indicateur"].sort_values().unique()
-    regions = df['nom_region'].sort_values().unique()
-    departements = df['nom_departement'].sort_values().unique()
-    sous_prefectures = df['nom_sousprefecture'].sort_values().unique()
+    # Charger les données depuis MySQL
+    df = get_data_from_mysql()
+
+    # Obtenir les options pour chaque filtre (indicateur, région, etc.)
+    indicateurs_options = qr.options_indicateur()
+    regions = df['nom_region'].dropna().sort_values().unique()
+    departements = df['nom_departement'].dropna().sort_values().unique()
+    sous_prefectures = df['nom_sousprefecture'].dropna().sort_values().unique()
 
     if request.method == 'POST':
         # Récupérer les sélections de l'utilisateur
@@ -88,40 +105,41 @@ def request_indicateur():
         departement_SELECT = request.form.get('departement')
         sousprefecture_SELECT = request.form.get('sous_prefecture')
 
-        # Commencer avec l'ensemble complet des données
-        df_filtered = df.drop(columns=['statut','id'], errors='ignore')
-        df_filtered =df_filtered[df_filtered['nom_indicateur'] == indicateur_SELECT]
+        # Commencer avec l'ensemble complet des données, sans certaines colonnes inutiles
+        df_filtered = df.drop(columns=['statut', 'id'], errors='ignore')
 
-        # Appliquer chaque filtre uniquement si une valeur est sélectionnée
+        # Filtrer par indicateur sélectionné
+        if indicateur_SELECT:
+            df_filtered = df_filtered[df_filtered['nom_indicateur'] == indicateur_SELECT]
+
+        # Premier résultat après filtre indicateur
+        print("Premier résultat :", df_filtered.head())
+
+        # Appliquer les filtres supplémentaires en fonction des sélections
         if sousprefecture_SELECT:
             df_filtered = df_filtered[df_filtered['nom_sousprefecture'] == sousprefecture_SELECT]
-            # Supprimer les colonnes 'nom_region' et 'nom_departement' si la sous-préfecture est sélectionnée
+            # Supprimer les colonnes région et département si sous-préfecture est sélectionnée
             df_filtered = df_filtered.drop(columns=['nom_region', 'nom_departement'], errors='ignore')
-        # Si le département est sélectionné (et pas de sous-préfecture), on filtre par département
-# et on supprime la colonne région
-        elif departement_SELECT and not sousprefecture_SELECT:
-            df_filtered = df_filtered[
-                (df_filtered['nom_region'] == region_SELECT) &
-                (df_filtered['nom_departement'].isna()) 
 
+        elif departement_SELECT:
+            df_filtered = df_filtered[
+                (df_filtered['nom_departement'] == departement_SELECT) &
+                (df_filtered['nom_region'] == region_SELECT)
             ]
-            
-            # Supprimer la colonne 'nom_region' si le département est sélectionné
+            # Supprimer la colonne région si département est sélectionné
             df_filtered = df_filtered.drop(columns=['nom_region'], errors='ignore')
-        elif region_SELECT and not departement_SELECT and not sousprefecture_SELECT:
-            df_filtered = df_filtered[
-                (df_filtered['nom_region'] == region_SELECT) &
-                (df_filtered['nom_departement'].isna()) &
-                (df_filtered['nom_sousprefecture'].isna())
-            ]
 
+        elif region_SELECT:
+            df_filtered = df_filtered[df_filtered['nom_region'] == region_SELECT]
 
-        # Supprimer les colonnes contenant uniquement des valeurs NaN
+        # Deuxième résultat après application de tous les filtres
+        print("Résultat 2 :", df_filtered.head())
+
+        # Supprimer les colonnes contenant uniquement des NaN
         df_filtered = df_filtered.dropna(axis=1, how='all')
 
         # Vérifier si le DataFrame filtré est vide
         if df_filtered.empty:
-            # Si aucun résultat n'est trouvé, renvoyer un message "Aucune donnée disponible"
             message = "Aucune donnée disponible pour les critères sélectionnés."
             return render_template('result.html', available_columns=[], message=message)
         else:
@@ -130,19 +148,19 @@ def request_indicateur():
 
             # Obtenir les colonnes disponibles pour la zone de dépôt
             available_columns = list(df_filtered.columns)
-        
 
-            # Afficher la page résultat avec les colonnes disponibles et sans message d'erreur
-            return render_template('result.html', available_columns=available_columns, message="",indicateur_SELECT=indicateur_SELECT)
+            # Afficher la page résultat avec les colonnes disponibles
+            return render_template('result.html', available_columns=available_columns, message="", indicateur_SELECT=indicateur_SELECT)
 
     # Si GET, afficher la page de sélection avec les options de filtre
     return render_template(
-        'requete_indicateur.html', 
-        indicateurs=indicateurs, 
-        regions=regions, 
-        departements=departements, 
+        'requete_indicateur.html',
+        indicateurs=indicateurs_options,
+        regions=regions,
+        departements=departements,
         sous_prefectures=sous_prefectures
     )
+
 
 
 # Route pour générer le tableau croisé
@@ -150,22 +168,27 @@ def request_indicateur():
 def generate_pivot_table():
     data = request.get_json()
     selected_columns = data.get('columns', [])
-    
 
-    # Reload filtered dataframe from session
+    # Recharger le DataFrame filtré depuis la session
     df_filtered_json = session.get('df_filtered', None)
+    print("Vérification du DataFrame JSON:", df_filtered_json)
 
     if df_filtered_json:
+        # Convertir le JSON en DataFrame
         df = pd.read_json(df_filtered_json)
         
         if selected_columns:
-            # Generate the pivot table based on selected columns
-            pivot_table = pd.pivot_table(df, values='Valeur', index=selected_columns,aggfunc='sum')
-            pivot_html = pivot_table.to_html(classes='table table-bordered')
+            # Filtrer le DataFrame pour ne conserver que les colonnes sélectionnées
+            df_filtered = df[selected_columns]
 
-            return jsonify({"table_html": pivot_html})
+            # Convertir en HTML pour l'affichage dans la table
+            table_html = df_filtered.to_html(classes='table table-bordered', index=False)
 
+            return jsonify({"table_html": table_html})
+
+    # Si aucune colonne sélectionnée ou DataFrame vide, renvoyer un message par défaut
     return jsonify({"table_html": "<p>Aucune colonne sélectionnée</p>"})
+
 
 import io
 
@@ -185,7 +208,7 @@ def download_excel():
         df = pd.read_json(df_filtered_json)
 
         # Générer le tableau croisé dynamique en utilisant les colonnes sélectionnées
-        pivot_table = pd.pivot_table(df, values='Valeur', index=selected_columns, aggfunc='sum')
+        pivot_table = pd.pivot_table(df, values='Valeur', index=selected_columns)
 
         # Créer un fichier Excel en mémoire
         output = io.BytesIO()
@@ -202,8 +225,14 @@ def download_excel():
 
 
 
+# Debut du  dash bord région avec leur carte
+
+@app.route('/dash_region', methods=['GET', 'POST'])
+def dash_region():
+    return render_template('dash_region.html')
 
 
+#Fin du das bord avec les régions de la CI
 
 if __name__ == '__main__':
     app.run(debug=True)
