@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Requête Indicateur</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/request_indicateur.css') }}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
 </head>
 <body>
     <div class="header-secondary">
@@ -14,46 +17,32 @@
             <a href="#apropos">A propos</a>
             <a href="#connexion">Guide utilisateur</a>
         </div>
-       
     </div>
 
-    
     <div class="container">
         <h1>Recherche d'indicateurs</h1>
 
         <form method="POST" class="filter-form">
-            <!-- Cadre pour la sélection de l'indicateur -->
+            <!-- Cadre pour la recherche d'indicateur avec autocomplétion -->
             <div class="frame">
-                <label for="indicateur-search">Indicateur :</label>
-                <!-- Champ de saisie avec une liste de données -->
-                <input type="text" id="indicateur-search" placeholder="Saisir un mot clé pour l'indicateur..." list="indicateur-list" required>
-                
-                <!-- Liste des options suggérées -->
-                <datalist id="indicateur-list">
-                    {% for indicateur in indicateurs %}
-                        <option value="{{ indicateur }}">
-                    {% endfor %}
-                </datalist>
+                <label for="indicateur">Indicateur :</label>
+                <input type="text" id="indicateur-search" placeholder="Saisir un mot clé pour l'indicateur..." required>
+                <input type="hidden" name="indicateur" id="indicateur">
             </div>
+            
             <!-- Cadre pour la sélection de la région -->
             <div class="frame">
                 <label for="region">Région :</label>
-                <select name="region" id="region" onchange="loadDepartements()" required>
+                <select name="region" id="region" onchange="loadDepartements()" disabled required>
                     <option value="">Sélectionner la région</option>
-                    {% for region in regions %}
-                        <option value="{{ region }}">{{ region }}</option>
-                    {% endfor %}
                 </select>
             </div>
 
             <!-- Cadre pour la sélection du département -->
             <div class="frame">
                 <label for="departement">Département :</label>
-                <select name="departement" id="departement" onchange="loadSousPrefectures()" disabled >
+                <select name="departement" id="departement" onchange="loadSousPrefectures()" disabled>
                     <option value="">Sélectionner le département</option>
-                    {% for departement in departements %}
-                        <option value="{{ departement }}">{{ departement }}</option>
-                    {% endfor %}
                 </select>
             </div>
 
@@ -62,9 +51,6 @@
                 <label for="sous_prefecture">Sous-préfecture :</label>
                 <select name="sous_prefecture" id="sous_prefecture" disabled>
                     <option value="">Sélectionner la sous-préfecture</option>
-                    {% for sous_prefecture in sous_prefectures %}
-                        <option value="{{ sous_prefecture }}">{{ sous_prefecture }}</option>
-                    {% endfor %}
                 </select>
             </div>
 
@@ -86,79 +72,61 @@
         {% endwith %}
     </div>
 
-
     <script>
-        // Filtrer les départements en fonction de la région
-        document.getElementById('region').addEventListener('change', function() {
-            var region = this.value;
-            if (region) {
-                fetch('/get_departements/' + region)
-                    .then(response => response.json())
-                    .then(data => {
-                        var departementSelect = document.getElementById('departement');
-                        departementSelect.innerHTML = '<option value="">Sélectionnez un département</option>';
-                        data.forEach(function(departement) {
-                            var option = document.createElement('option');
-                            option.value = departement;
-                            option.textContent = departement;
-                            departementSelect.appendChild(option);
-                        });
-                        departementSelect.disabled = false;
-
-                        // Réinitialiser la sous-préfecture
-                        document.getElementById('sous_prefecture').innerHTML = '<option value="">Sélectionnez une sous-préfecture</option>';
-                        document.getElementById('sous_prefecture').disabled = true;
+        $(function() {
+            // Initialisation de l'autocomplétion pour la recherche d'indicateur
+            $("#indicateur-search").autocomplete({
+                source: function(request, response) {
+                    $.ajax({
+                        url: "/autocomplete_indicateur",  // Route Flask qui renvoie une liste d'indicateurs
+                        dataType: "json",
+                        data: {
+                            term: request.term
+                        },
+                        success: function(data) {
+                            response(data);  // Les résultats sont renvoyés sous forme de liste
+                        }
                     });
-            }
-        });
+                },
+                select: function(event, ui) {
+                    // Lorsque l'utilisateur sélectionne un indicateur
+                    $("#indicateur-search").val(ui.item.label);  // Afficher l'indicateur sélectionné
+                    $("#indicateur").val(ui.item.value);  // Enregistrer la valeur dans le champ caché
 
-        // Filtrer les sous-préfectures en fonction du département
-        document.getElementById('departement').addEventListener('change', function() {
-            var departement = this.value;
-            if (departement) {
-                fetch('/get_sous_prefectures/' + departement)
-                    .then(response => response.json())
-                    .then(data => {
-                        var sousPrefectureSelect = document.getElementById('sous_prefecture');
-                        sousPrefectureSelect.innerHTML = '<option value="">Sélectionnez une sous-préfecture</option>';
-                        data.forEach(function(sous_prefecture) {
-                            var option = document.createElement('option');
-                            option.value = sous_prefecture;
-                            option.textContent = sous_prefecture;
-                            sousPrefectureSelect.appendChild(option);
-                        });
-                        sousPrefectureSelect.disabled = false;
-                    });
-            }
-        });
-
-
-        // Pour le fitrage lors de la saisie de l'indicateur
-        // Fonction JavaScript pour filtrer les options du select
-        function filterIndicateurs() {
-            // Récupère la saisie utilisateur
-            let input = document.getElementById('indicateur-search').value.toLowerCase();
-            // Récupère la liste déroulante
-            let select = document.getElementById('indicateur');
-            // Récupère toutes les options du select
-            let options = select.getElementsByTagName('option');
-    
-            // Parcourt toutes les options et masque celles qui ne correspondent pas
-            for (let i = 1; i < options.length; i++) { // Commence à 1 pour ignorer l'option par défaut "Sélectionner un indicateur"
-                let option = options[i];
-                let indicateur = option.text.toLowerCase();
-                
-                // Vérifie si l'indicateur contient la chaîne tapée
-                if (indicateur.includes(input)) {
-                    option.style.display = ""; // Affiche l'option
-                } else {
-                    option.style.display = "none"; // Masque l'option
+                    // Appeler loadRegions() après la sélection de l'indicateur
+                    loadRegions();
+                    
+                    return false;
                 }
+            });
+        });
+
+        // Fonction pour charger les régions en fonction de l'indicateur sélectionné
+        function loadRegions() {
+            const indicateur = document.getElementById('indicateur').value;
+            const regionSelect = document.getElementById('region');
+            
+            // Réinitialiser les régions
+            regionSelect.innerHTML = '<option value="">Sélectionner une région</option>';
+
+            if (indicateur) {
+                fetch(`/get_regions?indicateur=${indicateur}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        regionSelect.disabled = false;
+                        data.forEach(region => {
+                            const option = document.createElement('option');
+                            option.value = region;
+                            option.text = region;
+                            regionSelect.appendChild(option);
+                        });
+                    });
+            } else {
+                regionSelect.disabled = true;
             }
         }
-
-          // Fonction pour charger les départements en fonction de la région
-    function loadDepartements() {
+     // Fonction pour charger les départements en fonction de la région
+     function loadDepartements() {
         const region = document.getElementById('region').value;
         const departementSelect = document.getElementById('departement');
         const sousPrefectureSelect = document.getElementById('sous_prefecture');
