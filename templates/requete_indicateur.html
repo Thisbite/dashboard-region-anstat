@@ -25,13 +25,14 @@
         <form method="POST" class="filter-form">
             <!-- Cadre pour la recherche d'indicateur avec autocomplétion -->
             <div class="frame">
-                <label for="indicateur">Indicateur :</label>
-                <input type="text" id="indicateur-search" placeholder="Saisir un mot clé pour l'indicateur..." required>
+               
+                <input type="hidden"id="indicateur-search" value="{{ indicateur2 }}" placeholder="Saisir un mot clé pour l'indicateur..." required>
                 <input type="hidden" name="indicateur" id="indicateur">
             </div>
             
             <!-- Cadre pour la sélection de la région -->
             <div class="frame">
+                <p><strong>NB :</strong> Si la région ne s'affiche pas, c'est que l'indicateur n'a pas été collecté dans cette région.</p>
                 <label for="region">Région :</label>
                 <select name="region" id="region" onchange="loadDepartements()" disabled required>
                     <option value="">Sélectionner la région</option>
@@ -73,42 +74,19 @@
     </div>
 
     <script>
-        $(function() {
-            // Initialisation de l'autocomplétion pour la recherche d'indicateur
-            $("#indicateur-search").autocomplete({
-                source: function(request, response) {
-                    $.ajax({
-                        url: "/autocomplete_indicateur",  // Route Flask qui renvoie une liste d'indicateurs
-                        dataType: "json",
-                        data: {
-                            term: request.term
-                        },
-                        success: function(data) {
-                            response(data);  // Les résultats sont renvoyés sous forme de liste
-                        }
-                    });
-                },
-                select: function(event, ui) {
-                    // Lorsque l'utilisateur sélectionne un indicateur
-                    $("#indicateur-search").val(ui.item.label);  // Afficher l'indicateur sélectionné
-                    $("#indicateur").val(ui.item.value);  // Enregistrer la valeur dans le champ caché
-
-                    // Appeler loadRegions() après la sélection de l'indicateur
-                    loadRegions();
-                    
-                    return false;
-                }
-            });
+        $(document).ready(function() {
+            // Appeler la fonction pour charger les régions dès que la page est chargée
+            loadRegions();
         });
 
         // Fonction pour charger les régions en fonction de l'indicateur sélectionné
         function loadRegions() {
-            const indicateur = document.getElementById('indicateur').value;
+            const indicateur = document.getElementById('indicateur-search').value;
             const regionSelect = document.getElementById('region');
             
             // Réinitialiser les régions
             regionSelect.innerHTML = '<option value="">Sélectionner une région</option>';
-
+    
             if (indicateur) {
                 fetch(`/get_regions?indicateur=${indicateur}`)
                     .then(response => response.json())
@@ -125,59 +103,60 @@
                 regionSelect.disabled = true;
             }
         }
-     // Fonction pour charger les départements en fonction de la région
-     function loadDepartements() {
-        const region = document.getElementById('region').value;
-        const departementSelect = document.getElementById('departement');
-        const sousPrefectureSelect = document.getElementById('sous_prefecture');
 
-        // Réinitialiser le département et la sous-préfecture
-        departementSelect.innerHTML = '<option value="">Sélectionner un département</option>';
-        sousPrefectureSelect.innerHTML = '<option value="">Sélectionner une sous-préfecture</option>';
-        sousPrefectureSelect.disabled = true;
+        // Fonction pour charger les départements en fonction de la région
+        function loadDepartements() {
+            const region = document.getElementById('region').value;
+            const departementSelect = document.getElementById('departement');
+            const sousPrefectureSelect = document.getElementById('sous_prefecture');
 
-        if (region) {
-            fetch(`/get_departements?region=${region}`)
-                .then(response => response.json())
-                .then(data => {
-                    departementSelect.disabled = false;
-                    data.forEach(departement => {
-                        const option = document.createElement('option');
-                        option.value = departement;
-                        option.text = departement;
-                        departementSelect.appendChild(option);
-                    });
-                });
-        } else {
-            departementSelect.disabled = true;
+            // Réinitialiser le département et la sous-préfecture
+            departementSelect.innerHTML = '<option value="">Sélectionner un département</option>';
+            sousPrefectureSelect.innerHTML = '<option value="">Sélectionner une sous-préfecture</option>';
             sousPrefectureSelect.disabled = true;
-        }
-    }
 
-    // Fonction pour charger les sous-préfectures en fonction du département
-    function loadSousPrefectures() {
-        const departement = document.getElementById('departement').value;
-        const sousPrefectureSelect = document.getElementById('sous_prefecture');
-
-        // Réinitialiser la sous-préfecture
-        sousPrefectureSelect.innerHTML = '<option value="">Sélectionner une sous-préfecture</option>';
-
-        if (departement) {
-            fetch(`/get_sous_prefectures?departement=${departement}`)
-                .then(response => response.json())
-                .then(data => {
-                    sousPrefectureSelect.disabled = false;
-                    data.forEach(sousPrefecture => {
-                        const option = document.createElement('option');
-                        option.value = sousPrefecture;
-                        option.text = sousPrefecture;
-                        sousPrefectureSelect.appendChild(option);
+            if (region) {
+                fetch(`/get_departements?region=${region}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        departementSelect.disabled = false;
+                        data.forEach(departement => {
+                            const option = document.createElement('option');
+                            option.value = departement;
+                            option.text = departement;
+                            departementSelect.appendChild(option);
+                        });
                     });
-                });
-        } else {
-            sousPrefectureSelect.disabled = true;
+            } else {
+                departementSelect.disabled = true;
+                sousPrefectureSelect.disabled = true;
+            }
         }
-    }
+
+        // Fonction pour charger les sous-préfectures en fonction du département
+        function loadSousPrefectures() {
+            const departement = document.getElementById('departement').value;
+            const sousPrefectureSelect = document.getElementById('sous_prefecture');
+
+            // Réinitialiser la sous-préfecture
+            sousPrefectureSelect.innerHTML = '<option value="">Sélectionner une sous-préfecture</option>';
+
+            if (departement) {
+                fetch(`/get_sous_prefectures?departement=${departement}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        sousPrefectureSelect.disabled = false;
+                        data.forEach(sousPrefecture => {
+                            const option = document.createElement('option');
+                            option.value = sousPrefecture;
+                            option.text = sousPrefecture;
+                            sousPrefectureSelect.appendChild(option);
+                        });
+                    });
+            } else {
+                sousPrefectureSelect.disabled = true;
+            }
+        }
     </script>
 </body>
 </html>

@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Base de données des statistiques régionales</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}"> <!-- Lien vers votre fichier CSS -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> <!-- Assurez-vous de charger jQuery -->
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script> <!-- Assurez-vous de charger jQuery UI -->
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css"> <!-- Style pour jQuery UI -->
 </head>
 <body>
 
@@ -15,9 +18,13 @@
             <a href="#apropos">A propos</a>
             <a href="#connexion">Guide utilisateur</a>
         </div>
+
+        <!-- Formulaire de recherche -->
         <div class="search-bar">
-            <input type="text" placeholder="Rechercher...">
-            <button type="submit">Chercher</button>
+            <form action="{{ url_for('request_indicateur') }}" method="GET">
+                <input type="text" id="indicateur-search2" name="indicateur2" placeholder="Recherche..." required>
+                <button type="submit">Chercher</button>
+            </form>
         </div>
     </div>
 
@@ -25,7 +32,6 @@
         <div class="left-column">
             <div class="left-section">
                 {{ map_html|safe }}
-              
             </div>
 
             <div class="right-section">
@@ -44,7 +50,9 @@
             <h2>Liste des régions</h2>
             <ul class="region-list">
                 {% for region in regions %}
-                <li>{{ region }}</li>
+                <li>
+                    <a href="{{ url_for('dash_region', region=region) }}">{{ region }}</a>
+                </li>
                 {% endfor %}
             </ul>
         </div>
@@ -62,8 +70,121 @@
         </div>
     </div>
 
-    <!-- Utilisation de json_script pour injecter les données de manière sécurisée -->
+    <!-- Script pour l'autocomplétion -->
     <script>
+        $(function() {
+            // Initialisation de l'autocomplétion pour la recherche d'indicateur
+            $("#indicateur-search2").autocomplete({
+                source: function(request, response) {
+                    $.ajax({
+                        url: "/autocomplete_indicateur",  // Route Flask qui renvoie une liste d'indicateurs
+                        dataType: "json",
+                        data: {
+                            term: request.term
+                        },
+                        success: function(data) {
+                            response(data);  // Les résultats sont renvoyés sous forme de liste
+                        }
+                    });
+                },
+                select: function(event, ui) {
+                    // Lorsque l'utilisateur sélectionne un indicateur
+                    $("#indicateur-search2").val(ui.item.label);  // Afficher l'indicateur sélectionné
+                     // Appeler loadRegions() après la sélection de l'indicateur
+                     loadRegions();
+                    return false;
+                }
+            });
+        });
+
+
+        // Fonction pour charger les régions en fonction de l'indicateur sélectionné
+        function loadRegions() {
+            const indicateur = document.getElementById('indicateur2').value;
+            const regionSelect = document.getElementById('region');
+            
+            // Réinitialiser les régions
+            regionSelect.innerHTML = '<option value="">Sélectionner une région</option>';
+
+            if (indicateur) {
+                fetch(`/get_regions?indicateur=${indicateur}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        regionSelect.disabled = false;
+                        data.forEach(region => {
+                            const option = document.createElement('option');
+                            option.value = region;
+                            option.text = region;
+                            regionSelect.appendChild(option);
+                        });
+                    });
+            } else {
+                regionSelect.disabled = true;
+            }
+        }
+     // Fonction pour charger les départements en fonction de la région
+     function loadDepartements() {
+        const region = document.getElementById('region').value;
+        const departementSelect = document.getElementById('departement');
+        const sousPrefectureSelect = document.getElementById('sous_prefecture');
+
+        // Réinitialiser le département et la sous-préfecture
+        departementSelect.innerHTML = '<option value="">Sélectionner un département</option>';
+        sousPrefectureSelect.innerHTML = '<option value="">Sélectionner une sous-préfecture</option>';
+        sousPrefectureSelect.disabled = true;
+
+        if (region) {
+            fetch(`/get_departements?region=${region}`)
+                .then(response => response.json())
+                .then(data => {
+                    departementSelect.disabled = false;
+                    data.forEach(departement => {
+                        const option = document.createElement('option');
+                        option.value = departement;
+                        option.text = departement;
+                        departementSelect.appendChild(option);
+                    });
+                });
+        } else {
+            departementSelect.disabled = true;
+            sousPrefectureSelect.disabled = true;
+        }
+    }
+
+    // Fonction pour charger les sous-préfectures en fonction du département
+    function loadSousPrefectures() {
+        const departement = document.getElementById('departement').value;
+        const sousPrefectureSelect = document.getElementById('sous_prefecture');
+
+        // Réinitialiser la sous-préfecture
+        sousPrefectureSelect.innerHTML = '<option value="">Sélectionner une sous-préfecture</option>';
+
+        if (departement) {
+            fetch(`/get_sous_prefectures?departement=${departement}`)
+                .then(response => response.json())
+                .then(data => {
+                    sousPrefectureSelect.disabled = false;
+                    data.forEach(sousPrefecture => {
+                        const option = document.createElement('option');
+                        option.value = sousPrefecture;
+                        option.text = sousPrefecture;
+                        sousPrefectureSelect.appendChild(option);
+                    });
+                });
+        } else {
+            sousPrefectureSelect.disabled = true;
+        }
+    }
+
+
+
+
+
+
+
+
+
+
         // Récupérer les données des régions en toute sécurité depuis json_script
         var regionsCoords = {{ coord_list|tojson }};
 

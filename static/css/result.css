@@ -1,10 +1,151 @@
 /* General body styling */
+
+
+.header-secondary {
+    background-color: #f8f9fa;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+}
+
+.nav-links {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.nav-links a {
+    text-decoration: none;
+    color: #004085;
+    padding: 10px 20px;
+    font-size: 18px;
+    margin: 0 10px;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+.nav-links a:hover {
+    background-color: #004085;
+    color: white;
+}
+
+.search-bar {
+    display: flex;
+    align-items: center;
+}
+
+.search-bar input[type="text"] {
+    padding: 8px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 200px;
+    margin-right: 10px;
+
+}
+
+.search-bar button {
+    padding: 8px 12px;
+    background-color: #004085;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.search-bar button:hover {
+    background-color: #003060;
+}
+
 body {
     font-family: Arial, sans-serif;
     background-color: #f8f9fa;
     color: #333;
-    margin: 0;
     padding: 20px;
+    margin: 0;
+}
+
+/* Heading styling */
+h1, h3 {
+    color: #004085;
+    text-align: center;
+}
+
+/* Frame styling */
+.frame {
+    border: 2px solid #004085;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+    background-color: #fff;
+}
+
+/* Animation pour faire clignoter le texte */
+@keyframes blink {
+    0%, 100% {
+        opacity: 1; /* Texte visible */
+    }
+    50% {
+        opacity: 0; /* Texte masqué */
+    }
+}
+/* Dropzone styling */
+.dropzone {
+    border: 2px dashed #004085;
+    padding: 10px;
+    min-height: 100px;
+    margin-bottom: 20px;
+    background-color: #e9ecef;
+    position: relative;
+    font-size: 20px;
+}
+
+.dropzone p {
+    color: #e71118;
+    position: absolute;
+    animation: blink 1s infinite; 
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    margin: 0;
+   
+}
+
+/* Draggable item styling */
+.draggable {
+    cursor: move;
+    padding: 8px;
+    background-color: #e2e6ea;
+    border: 1px solid #004085;
+    display: inline-block;
+    margin-right: 5px;
+    margin-bottom: 5px;
+    border-radius: 4px;
+}
+
+/* Remove button styling */
+.remove-btn {
+    margin-left: 10px;
+    color: red;
+    cursor: pointer;
+}
+
+/* Button styling */
+.btn {
+    display: inline-block;
+    padding: 10px 15px;
+    background-color: #004085;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: center;
+}
+
+.btn:hover {
+    background-color: #003366;
 }
 
 /* Result table container */
@@ -39,6 +180,17 @@ table tr:nth-child(even) {
     background-color: #f2f2f2;
 }
 
+/* Alternate table styling */
+th, td {
+    border: 1px solid #0c29ff;
+    padding: 8px;
+    text-align: left;
+}
+
+th {
+    background-color: #f2f2f2;
+}
+
 /* Flash message styling for no data */
 .flash-no-data {
     padding: 15px;
@@ -62,21 +214,73 @@ button.back-btn:hover {
     background-color: #003366;
 }
 
-#dynamic-pivot-table {
-    margin-top: 20px;
+/* Style for Definitions and Mode of Calcul */
+.frame p {
+    margin: 10px 0;
 }
 
-table {
-    border-collapse: collapse;
-    width: 100%;
+/* Styling for bold and underlined text in Definitions and Mode de Calcul */
+.frame p strong {
+    font-weight: bold;
+    text-decoration: underline;
+    color: red;
 }
 
-th, td {
-    border: 1px solid #0c29ff;
-    padding: 8px;
-    text-align: left;
+/* Force text to move to the next line in Definitions and Mode de Calcul */
+.frame p span {
+    display: block;
+    margin-top: 5px;
 }
 
-th {
-    background-color: #f2f2f2;
+/*
+ Style pour le conteneur parent avec la bordure tricolore animée 
+.parent-frame {
+    border: 10px solid;
+    border-image: linear-gradient(to right, orange, white, green, orange, white, green);
+    border-image-slice: 1;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    background-color: #fff;
+    animation: borderScroll 5s linear infinite; /* Animation pour faire défiler la bordure 
+}
+
+ Animation keyframes pour faire défiler la bordure 
+@keyframes borderScroll {
+    0% {
+        border-image-source: linear-gradient(to right, orange, white, green, orange, white, green);
+    }
+    100% {
+        border-image-source: linear-gradient(to right, green, orange, white, green, orange, white);
+    }
+}
+
+ Frame styling (inchangé) 
+.frame {
+    border: 2px solid #004085;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+    background-color: #fff;
+}
+*/
+
+/* Style pour le conteneur parent avec la bordure tricolore */
+.parent-frame {
+    border: 10px solid; /* Épaisseur de la bordure */
+    border-image: linear-gradient(to right, orange 33%, white 33%, white 66%, green 66%);
+    border-image-slice: 1;
+    padding: 20px;
+    border-radius: 10px; /* Pour arrondir les coins du cadre */
+    margin-bottom: 20px;
+    background-color: #fff; /* Couleur de fond blanche à l'intérieur */
+}
+
+/* Frame styling (inchangé) */
+.frame {
+    border: 2px solid #004085;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+    background-color: #fff;
 }

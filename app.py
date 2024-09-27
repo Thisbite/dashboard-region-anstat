@@ -44,38 +44,6 @@ def list_regions():
 
 
 
-
-
-
-
-#Pour les requetes:
-# Fonction pour charger les données CSV
-def get_data(filepath):
-    df = pd.read_csv(filepath, sep=',')
-    return df
-
-
-
-
-
-
-
-def get_data_from_mysql():
-    # Configurer les informations de connexion à la base de données MySQL
-    conn = cf.create_connection()
-    # Requête SQL pour sélectionner toutes les données
-    query = "SELECT * FROM valeur_indicateur_libelle_ok"
-
-    # Charger les données dans un DataFrame pandas
-    df = pd.read_sql(query, conn)
-
-    # Fermer la connexion
-    conn.close()
-
-    return df
-
-
-
 @app.route('/autocomplete_indicateur')
 def autocomplete_indicateur():
     term = request.args.get('term', '')
@@ -95,7 +63,7 @@ def autocomplete_indicateur():
 @app.route('/get_regions', methods=['GET'])
 def get_regions():
     indicateur = request.args.get('indicateur')
-    df = get_data_from_mysql()  # Récupère les données
+    df = qr.get_data_from_mysql()  # Récupère les données
     regions = df[df['indicateur'] == indicateur]['region'].dropna().sort_values().unique()
     return jsonify(list(regions))
 
@@ -103,7 +71,7 @@ def get_regions():
 @app.route('/get_departements', methods=['GET'])
 def get_departements():
     region = request.args.get('region')
-    df = get_data_from_mysql()  # Récupère les données
+    df = qr.get_data_from_mysql()  # Récupère les données
     departements = df[df['region'] == region]['departement'].sort_values().unique()
     return jsonify(list(departements))
 
@@ -111,7 +79,7 @@ def get_departements():
 @app.route('/get_sous_prefectures', methods=['GET'])
 def get_sous_prefectures():
     departement = request.args.get('departement')
-    df = get_data_from_mysql()  # Récupère les données
+    df = qr.get_data_from_mysql()  # Récupère les données
     sous_prefectures = df[df['departement'] == departement]['sousprefecture'].sort_values().unique()
     return jsonify(list(sous_prefectures))
 
@@ -119,14 +87,16 @@ def get_sous_prefectures():
 @app.route('/request_indicateur', methods=['GET', 'POST'])
 def request_indicateur():
     # Charger les données depuis MySQL
-    df = get_data_from_mysql()
+    df = qr.get_data_from_mysql()
+    indicateur2= request.args.get('indicateur2')
 
     # Obtenir les options pour chaque filtre (indicateur, région, etc.)
     indicateurs_options = qr.options_indicateur()
+    print("Indicateur 2:", indicateur2)
 
     if request.method == 'POST':
         # Récupérer les sélections de l'utilisateur
-        indicateur_SELECT = request.form.get('indicateur')
+        indicateur_SELECT = request.args.get('indicateur2')
         region_SELECT = request.form.get('region')
         departement_SELECT = request.form.get('departement')
         sousprefecture_SELECT = request.form.get('sous_prefecture')
@@ -170,6 +140,8 @@ def request_indicateur():
             print("Région sélectionnée:", region_SELECT)
             print("Département sélectionné:", departement_SELECT)
             print("Sous-préfecture sélectionnée:", sousprefecture_SELECT)
+            
+            
 
             print(df_filtered.head())  # Vérifie les premières lignes
 
@@ -181,9 +153,16 @@ def request_indicateur():
 
             # Obtenir les colonnes disponibles pour la zone de dépôt
             available_columns = list(df_filtered.columns)
+            defintions=qr.definition_indicateur(indicateur_choisi=indicateur_SELECT)
+            mode_calcul=qr.mode_calcul_indicateur(mode_calcul=indicateur_SELECT)
+            print('defintions indicateur:',defintions)
+            print('Mode de calcul:',mode_calcul)
 
-            # Afficher la page résultat avec les colonnes disponibles
-            return render_template('result.html', available_columns=available_columns, indicateur_SELECT=indicateur_SELECT)
+            # Afficher la page résultat avec les colonnes disponibles,pour les elements dans la page résultat c'est ici
+            return render_template('result.html', available_columns=available_columns, 
+                                   indicateur_SELECT=indicateur_SELECT,
+                                   defintions=defintions,
+                                   mode_calcul=mode_calcul)
 
     # Si GET, afficher la page de sélection avec les options de filtre
     regions = df['region'].dropna().sort_values().unique()
@@ -195,7 +174,8 @@ def request_indicateur():
         indicateurs=indicateurs_options,
         regions=regions,
         departements=departements,
-        sous_prefectures=sous_prefectures
+        sous_prefectures=sous_prefectures,
+        indicateur2=indicateur2
     )
 
 
