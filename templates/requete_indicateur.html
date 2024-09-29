@@ -13,14 +13,14 @@
     <div class="header-secondary">
         <div class="nav-links">
             <a href="{{ url_for('list_regions') }}">Statistiques</a>
-            <a href="{{ url_for('request_indicateur') }}">Requêtes</a>
+            <a href="{{ url_for('domaines') }}">Domaines</a>
             <a href="#apropos">A propos</a>
             <a href="#connexion">Guide utilisateur</a>
         </div>
     </div>
 
     <div class="container">
-        <h1>Recherche d'indicateurs</h1>
+        <h1>Définir la zone géographie</h1>
 
         <form method="POST" class="filter-form">
             <!-- Cadre pour la recherche d'indicateur avec autocomplétion -->
@@ -32,7 +32,7 @@
             
             <!-- Cadre pour la sélection de la région -->
             <div class="frame">
-                <p><strong>NB :</strong> Si la région ne s'affiche pas, c'est que l'indicateur n'a pas été collecté dans cette région.</p>
+                <p><strong>NB :</strong> Absence d'une entité géographique signifie pas de données disponible à ce niveau... </p>
                 <label for="region">Région :</label>
                 <select name="region" id="region" onchange="loadDepartements()" disabled required>
                     <option value="">Sélectionner la région</option>

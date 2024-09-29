@@ -1,20 +1,25 @@
+
+
+
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Base de données des statistiques régionales</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}"> <!-- Lien vers votre fichier CSS -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> <!-- Assurez-vous de charger jQuery -->
-    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script> <!-- Assurez-vous de charger jQuery UI -->
-    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css"> <!-- Style pour jQuery UI -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
 </head>
 <body>
 
     <div class="header-secondary">
         <div class="nav-links">
             <a href="{{ url_for('dash_region') }}">Statistiques</a>
-            <a href="{{ url_for('request_indicateur') }}">Requêtes</a>
+            <a href="{{ url_for('domaines') }}">Domaines</a>
             <a href="#apropos">A propos</a>
             <a href="#connexion">Guide utilisateur</a>
         </div>
@@ -22,7 +27,7 @@
         <!-- Formulaire de recherche -->
         <div class="search-bar">
             <form action="{{ url_for('request_indicateur') }}" method="GET">
-                <input type="text" id="indicateur-search2" name="indicateur2" placeholder="Recherche..." required>
+                <input type="text" id="indicateur-search2" name="indicateur2" placeholder="Recherche indicateur par mot clé..." required>
                 <button type="submit">Chercher</button>
             </form>
         </div>
@@ -36,11 +41,11 @@
 
             <div class="right-section">
                 <div class="box">
-                    <h3>Effectif de la population</h3>
-                    <div class="value">27,000,000</div>
+                    <h3>Population de la Côte d'Ivoire en 2021:</h3>
+                    <div class="value">29 389 150</div>
                 </div>
                 <div class="box">
-                    <h3>Nombre d'établissements</h3>
+                    <h3>Nombre d'établissements scolaire en Côte d'Ivoire en 2024</h3>
                     <div class="value">20,000</div>
                 </div>
             </div>
@@ -58,17 +63,30 @@
         </div>
     </div>
 
+    <!-- Graphe sur évolution -->
     <div class="bottom-container">
-        <div class="form-container">
-            <h3>Évolution de la population</h3>
+        <div class="card">
+            <h3>Évolution de la population ivoirienne</h3>
+            <div class="card-content">
+                {{ population_graph_html|safe }}
+            </div>
         </div>
-        <div class="form-container">
-            <h3>Education : Taux de scolarisation</h3>
+
+        <div class="card">
+            <h3>Taux de scolarisation ivoirienne</h3>
+            <div class="card-content">
+                {{ enrollment_graph_html|safe }}
+            </div>
         </div>
-        <div class="form-container">
+
+        <div class="card">
             <h3>Population par tranche d'âge</h3>
+            <div class="card-content">
+                {{ age_graph_html|safe }}
+            </div>
         </div>
     </div>
+
 
     <!-- Script pour l'autocomplétion -->
     <script>

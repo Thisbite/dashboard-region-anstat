@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Domaines</title>
+
+    <!-- CSS de l'application -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/domaines.css') }}"> 
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+
+    <!-- Favicon (si besoin) -->
+    <link rel="icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
+
+</head>
+<body>
+    <div class="header-secondary">
+        <div class="nav-links">
+            <a href="{{ url_for('list_regions') }}">Statistiques</a>
+            <a href="{{ url_for('domaines') }}">Domaines</a>
+            <a href="#apropos">A propos</a>
+            <a href="#connexion">Guide utilisateur</a>
+        </div>
+    </div>
+
+    <div class="container py-5">
+        <h1 class="text-center">
+            <span class="custom-title">Statistiques régionales</span>
+        </h1>
+
+        <div class="row row-cols-1 row-cols-4 g-4 py-5"> 
+            <!-- Populations -->
+            <div class="col"> 
+                <div class="card" style="width: 18rem;">
+                    <img src="{{ url_for('static', filename='domaines/populations.jpeg') }}" class="card-img-top" alt="Région d'Abidjan">
+                    <div class="card-body">
+                        <h5 class="card-title">Populations</h5>
+                        <p class="card-text">Avec plus de 30 millions d'habitants la Côte d'Ivoire </p>
+                        <a  href="{{ url_for('domaines_indicateur') }}" class="btn btn-primary">Découvrir plus</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Agriculture  -->
+            <div class="col"> 
+                <div class="card" style="width: 18rem;">
+                    <img src="{{ url_for('static', filename='domaines/agriculture.jpeg') }}" class="card-img-top" alt="agriculture">
+                    <div class="card-body">
+                        <h5 class="card-title">Agriculture </h5>
+                        <p class="card-text">Avec une économie dominée par l'agriculture , la Côte d'Ivoire est la </p>
+                        <a  href="{{ url_for('domaines_indicateur') }}" class="btn btn-primary">Découvrir plus</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Condtions de vies des menages -->
+            <div class="col"> 
+                <div class="card" style="width: 18rem;">
+                    <img src="{{ url_for('static', filename='domaines/conditions_vies.jpeg') }}" class="card-img-top" alt="conditions de vie des ménages">
+                    <div class="card-body">
+                        <h5 class="card-title">Conditions de vie des ménages</h5>
+                        <p class="card-text">Avec plus  50%  de sa population constitué</p>
+                        <a  href="{{ url_for('domaines_indicateur') }}" class="btn btn-primary">Découvrir plus</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- environnement -->
+            <div class="col"> 
+                <div class="card" style="width: 18rem;">
+                    <img src="{{ url_for('static', filename='domaines/environnement.jpeg') }}" class="card-img-top" alt="environnement">
+                    <div class="card-body">
+                        <h5 class="card-title">Environnement</h5>
+                        <p class="card-text">Un relief constitué de plateaux etc...</p>
+                        <a  href="{{ url_for('domaines_indicateur') }}" class="btn btn-primary">Découvrir plus</a>
+                    </div>
+                </div>
+            </div>
+
+           
+
+           <!-- Fin -->
+
+        </div>
+    </div>
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+
+</body>
+</html>

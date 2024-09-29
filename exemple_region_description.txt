@@ -37,3 +37,27 @@ def dashboard_regions():
     </div>
     {% endfor %}
 </div>
+
+
+
+
+
+
+@app.route('/region/<int:id>')
+def dash_region(id):
+    cursor = mysql.connection.cursor()
+    cursor.execute("SELECT * FROM regions WHERE id = %s", (id,))
+    region = cursor.fetchone()
+    return render_template('region_detail.html', region=region)
+
+
+<div class="right-column">
+    <h2>Liste des régions</h2>
+    <ul class="region-list">
+        {% for region in regions %}
+        <li>
+            <a href="{{ url_for('dash_region', id=region['id']) }}">{{ region['nom_region'] }}</a>
+        </li>
+        {% endfor %}
+    </ul>
+</div>

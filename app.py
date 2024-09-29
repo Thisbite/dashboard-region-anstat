@@ -10,6 +10,13 @@ import data as dt
 import config as cf
 import pandas as pd
 from io import StringIO
+import io
+import matplotlib.pyplot as plt
+
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+
 
 
 
@@ -35,12 +42,66 @@ migrate = Migrate(app, db)
 
 
 # On a une liste sur les régions de la CI, en effet elle est la page principale
+import matplotlib
+matplotlib.use('Agg')  # Utilisation du backend non interactif
+import matplotlib.pyplot as plt
+
+from flask import render_template
+import plotly.graph_objects as go
+import plotly.io as pio
+
 @app.route('/')
 def list_regions():
     regions = qr.options_regions()
     map_html = dt.statistiques()
-    coord_list = []  # Remplacez par vos données de coordonnées si nécessaire
-    return render_template('home.html', regions=regions,coord_list=coord_list, map_html= map_html)
+
+    # Données
+    years = [2019, 2020, 2021, 2022, 2023]
+    population = [24.0, 27.0, 27.4, 29.8, 30.38]
+    school_enrollment_rate = [75, 76, 78, 79, 80]
+    age_groups = ['0-14 ans', '15-24 ans', '25-54 ans', '55 - 59 ans','60 ans et plus']
+    age_distribution = [40, 20, 30, 10,18]
+    config = {"displayModeBar": False}
+
+    # Graphique 1 : Évolution de la population (plotly)
+    fig1 = go.Figure()
+    fig1.add_trace(go.Scatter(x=years, y=population, mode='lines+markers', name='Population', marker=dict(color='blue')))
+    fig1.update_layout(
+    title="Évolution de la population (en millions) <br> de 2019-2023", 
+    xaxis_title="Année", 
+    yaxis_title="Population (en millions)", 
+    hovermode="x unified"
+)
+
+
+    # Graphique 2 : Taux de scolarisation (plotly)
+    fig2 = go.Figure()
+    fig2.add_trace(go.Scatter(x=years, y=school_enrollment_rate, mode='lines+markers', name='Taux de scolarisation', marker=dict(color='green')))
+    fig2.update_layout(title="Taux de scolarisation (%) de 2019-2023", 
+                       xaxis_title="Année", yaxis_title="Taux de scolarisation (%)", 
+                       hovermode="x unified")
+
+    # Graphique 3 : Population par tranche d'âge (plotly)
+    fig3 = go.Figure()
+    fig3.add_trace(go.Bar(x=age_groups, y=age_distribution, name="Distribution d'âge", marker=dict(color='blue')))
+    fig3.update_layout(title="Population par tranche d'âge en 2023 (%)", 
+                       xaxis_title="Tranche d'âge", yaxis_title="Pourcentage (%)")
+
+    # Convertir les graphiques en HTML
+    population_graph_html = pio.to_html(fig1, full_html=False, config=config)
+    enrollment_graph_html = pio.to_html(fig2, full_html=False, config=config)
+    age_graph_html = pio.to_html(fig3, full_html=False, config=config)
+
+    # Passer les données aux templates
+    return render_template('home.html',
+                           regions=regions,
+                           coord_list=[],  # Ajouter vos coordonnées ici
+                           map_html=map_html,
+                           population_graph_html=population_graph_html,
+                           enrollment_graph_html=enrollment_graph_html,
+                           age_graph_html=age_graph_html)
+
+
 
 
 
@@ -207,7 +268,6 @@ def generate_pivot_table():
     return jsonify({"table_html": "<p>Aucune colonne sélectionnée</p>"})
 
 
-import io
 
 # Pour télécharger le tableau en Excel
 @app.route('/download_excel')
@@ -225,7 +285,7 @@ def download_excel():
         df = pd.read_json(df_filtered_json)
 
         # Générer le tableau croisé dynamique en utilisant les colonnes sélectionnées
-        pivot_table = pd.pivot_table(df, values='Valeur', index=selected_columns)
+        pivot_table = pd.pivot_table(df, index=selected_columns)
 
         # Créer un fichier Excel en mémoire
         output = io.BytesIO()
@@ -247,6 +307,107 @@ def download_excel():
 @app.route('/dash_region', methods=['GET', 'POST'])
 def dash_region():
     return render_template('dash_region.html')
+
+#==============================================================Domaine
+#Section de domaine
+@app.route('/domaines', methods=['GET', 'POST'])
+def domaines():
+    return render_template('domaines.html')
+
+
+#Requete domaine
+
+# Route pour afficher la page de requête
+@app.route('/domaines_indicateur', methods=['GET', 'POST'])
+def domaines_indicateur():
+    # Charger les données depuis MySQL
+    df = qr.get_data_from_mysql()
+
+    # Obtenir les options pour chaque filtre (indicateur, région, etc.)
+    indicateurs_options = qr.options_indicateur()
+
+    if request.method == 'POST':
+        # Récupérer les sélections de l'utilisateur
+        indicateur_SELECT = request.form.get('indicateur')
+        region_SELECT = request.form.get('region')
+        departement_SELECT = request.form.get('departement')
+        sousprefecture_SELECT = request.form.get('sous_prefecture')
+
+        # Commencer avec l'ensemble complet des données, sans colonnes inutiles
+        df_filtered = df.drop(columns=['statut_approbation', 'id'], errors='ignore')
+
+        # Appliquer les filtres en fonction des sélections
+        if indicateur_SELECT:
+            df_filtered = df_filtered[df_filtered['indicateur'] == indicateur_SELECT]
+            print("Indicateur sélectionné:", indicateur_SELECT)
+
+        if region_SELECT:
+            df_filtered = df_filtered[df_filtered['region'] == region_SELECT]
+            print("Région sélectionnée:", region_SELECT)
+
+        if departement_SELECT:
+            df_filtered = df_filtered[df_filtered['departement'] == departement_SELECT]
+            print("Département sélectionné:", departement_SELECT)
+
+        if sousprefecture_SELECT:
+            df_filtered = df_filtered[df_filtered['sousprefecture'] == sousprefecture_SELECT]
+            # Supprimer les colonnes région et département si sous-préfecture est sélectionnée
+            df_filtered = df_filtered.drop(columns=['region', 'departement'], errors='ignore')
+            print("Sous-préfecture sélectionnée:", sousprefecture_SELECT)
+
+        # Supprimer les colonnes contenant uniquement des NaN
+        df_filtered = df_filtered.dropna(axis=1, how='all')
+        print("DataFrame filtré avant suppression des NaN:\n", df_filtered)
+
+        # Normaliser les valeurs de la colonne 'indicateur' pour éviter les erreurs d'espacement
+        df_filtered['indicateur'] = df_filtered['indicateur'].str.strip().str.lower()
+
+        # Vérifier si le DataFrame filtré est vide
+        if df_filtered.empty:
+            message = "Aucune donnée disponible pour les critères sélectionnés."
+            return render_template('result.html', available_columns=[], message=message)
+        else:
+            # Après avoir filtré les données en fonction des critères de l'utilisateur
+            print("Indicateur sélectionné:", indicateur_SELECT)
+            print("Région sélectionnée:", region_SELECT)
+            print("Département sélectionné:", departement_SELECT)
+            print("Sous-préfecture sélectionnée:", sousprefecture_SELECT)
+
+
+
+            # Stocker le DataFrame filtré dans la session (au format JSON) avec StringIO pour éviter l'avertissement FutureWarning
+            from io import StringIO
+            df_filtered_json = StringIO()
+            df_filtered.to_json(df_filtered_json)
+            session['df_filtered'] = df_filtered_json.getvalue()
+
+            # Obtenir les colonnes disponibles pour la zone de dépôt
+            available_columns = list(df_filtered.columns)
+            defintions=qr.definition_indicateur(indicateur_choisi=indicateur_SELECT)
+            mode_calcul=qr.mode_calcul_indicateur(mode_calcul=indicateur_SELECT)
+
+            # Afficher la page résultat avec les colonnes disponibles
+            
+            return render_template('result.html', available_columns=available_columns, 
+                                   indicateur_SELECT=indicateur_SELECT,
+                                   defintions=defintions,
+                                   mode_calcul=mode_calcul
+                                   )
+
+    # Si GET, afficher la page de sélection avec les options de filtre
+    regions = df['region'].dropna().sort_values().unique()
+    departements = df['departement'].dropna().sort_values().unique()
+    sous_prefectures = df['sousprefecture'].dropna().sort_values().unique()
+
+    return render_template(
+        'domaines_indicateur.html',
+        indicateurs=indicateurs_options,
+        regions=regions,
+        departements=departements,
+        sous_prefectures=sous_prefectures
+    )
+
+
 
 
 #Fin du das bord avec les régions de la CI

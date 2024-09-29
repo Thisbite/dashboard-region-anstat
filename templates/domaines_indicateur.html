@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Requête Indicateur</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/domaines_indicateur.css') }}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+</head>
+<body>
+    <div class="header-secondary">
+        <div class="nav-links">
+            <a href="{{ url_for('list_regions') }}">Statistiques</a>
+            <a href="{{ url_for('domaines') }}">Domaines</a>
+            <a href="#apropos">A propos</a>
+            <a href="#connexion">Guide utilisateur</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <h1>Recherche d'indicateurs  et sa zone géographique</h1>
+
+        <form method="POST" class="filter-form">
+            <!-- Cadre pour la recherche d'indicateur avec autocomplétion -->
+            <div class="frame">
+                <label for="indicateur">Indicateur :</label>
+                <input type="text" id="indicateur-search" placeholder="Saisir un mot clé pour l'indicateur..." required>
+                <input type="hidden" name="indicateur" id="indicateur">
+            </div>
+            
+            <!-- Cadre pour la sélection de la région -->
+            <div class="frame">
+                <p><strong>NB :</strong> Absence d'une entité géographique signifie pas de données disponible à ce niveau... </p>
+                <label for="region">Région :</label>
+
+                <select name="region" id="region" onchange="loadDepartements()" disabled required>
+                    <option value="">Sélectionner la région</option>
+                </select>
+            </div>
+
+            <!-- Cadre pour la sélection du département -->
+            <div class="frame">
+                <label for="departement">Département :</label>
+                <select name="departement" id="departement" onchange="loadSousPrefectures()" disabled>
+                    <option value="">Sélectionner le département</option>
+                </select>
+            </div>
+
+            <!-- Cadre pour la sélection de la sous-préfecture -->
+            <div class="frame">
+                <label for="sous_prefecture">Sous-préfecture :</label>
+                <select name="sous_prefecture" id="sous_prefecture" disabled>
+                    <option value="">Sélectionner la sous-préfecture</option>
+                </select>
+            </div>
+
+            <!-- Bouton de recherche -->
+            <div class="frame">
+                <button type="submit" name="recherche" value="true" class="btn-recherche">Recherche</button>
+            </div>
+        </form>
+
+        <!-- Affichage des messages Flash en cas d'erreur -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <ul class="flash-messages">
+                    {% for category, message in messages %}
+                        <li class="{{ category }}">{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <script>
+        $(function() {
+            // Initialisation de l'autocomplétion pour la recherche d'indicateur
+            $("#indicateur-search").autocomplete({
+                source: function(request, response) {
+                    $.ajax({
+                        url: "/autocomplete_indicateur",  // Route Flask qui renvoie une liste d'indicateurs
+                        dataType: "json",
+                        data: {
+                            term: request.term
+                        },
+                        success: function(data) {
+                            response(data);  // Les résultats sont renvoyés sous forme de liste
+                        }
+                    });
+                },
+                select: function(event, ui) {
+                    // Lorsque l'utilisateur sélectionne un indicateur
+                    $("#indicateur-search").val(ui.item.label);  // Afficher l'indicateur sélectionné
+                    $("#indicateur").val(ui.item.value);  // Enregistrer la valeur dans le champ caché
+
+                    // Appeler loadRegions() après la sélection de l'indicateur
+                    loadRegions();
+                    
+                    return false;
+                }
+            });
+        });
+
+        // Fonction pour charger les régions en fonction de l'indicateur sélectionné
+        function loadRegions() {
+            const indicateur = document.getElementById('indicateur').value;
+            const regionSelect = document.getElementById('region');
+            
+            // Réinitialiser les régions
+            regionSelect.innerHTML = '<option value="">Sélectionner une région</option>';
+
+            if (indicateur) {
+                fetch(`/get_regions?indicateur=${indicateur}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        regionSelect.disabled = false;
+                        data.forEach(region => {
+                            const option = document.createElement('option');
+                            option.value = region;
+                            option.text = region;
+                            regionSelect.appendChild(option);
+                        });
+                    });
+            } else {
+                regionSelect.disabled = true;
+            }
+        }
+     // Fonction pour charger les départements en fonction de la région
+     function loadDepartements() {
+        const region = document.getElementById('region').value;
+        const departementSelect = document.getElementById('departement');
+        const sousPrefectureSelect = document.getElementById('sous_prefecture');
+
+        // Réinitialiser le département et la sous-préfecture
+        departementSelect.innerHTML = '<option value="">Sélectionner un département</option>';
+        sousPrefectureSelect.innerHTML = '<option value="">Sélectionner une sous-préfecture</option>';
+        sousPrefectureSelect.disabled = true;
+
+        if (region) {
+            fetch(`/get_departements?region=${region}`)
+                .then(response => response.json())
+                .then(data => {
+                    departementSelect.disabled = false;
+                    data.forEach(departement => {
+                        const option = document.createElement('option');
+                        option.value = departement;
+                        option.text = departement;
+                        departementSelect.appendChild(option);
+                    });
+                });
+        } else {
+            departementSelect.disabled = true;
+            sousPrefectureSelect.disabled = true;
+        }
+    }
+
+    // Fonction pour charger les sous-préfectures en fonction du département
+    function loadSousPrefectures() {
+        const departement = document.getElementById('departement').value;
+        const sousPrefectureSelect = document.getElementById('sous_prefecture');
+
+        // Réinitialiser la sous-préfecture
+        sousPrefectureSelect.innerHTML = '<option value="">Sélectionner une sous-préfecture</option>';
+
+        if (departement) {
+            fetch(`/get_sous_prefectures?departement=${departement}`)
+                .then(response => response.json())
+                .then(data => {
+                    sousPrefectureSelect.disabled = false;
+                    data.forEach(sousPrefecture => {
+                        const option = document.createElement('option');
+                        option.value = sousPrefecture;
+                        option.text = sousPrefecture;
+                        sousPrefectureSelect.appendChild(option);
+                    });
+                });
+        } else {
+            sousPrefectureSelect.disabled = true;
+        }
+    }
+    </script>
+</body>
+</html>
