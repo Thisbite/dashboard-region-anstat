@@ -1,0 +1,167 @@
+.container {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 20px;
+    border-radius: 10px;
+    border: 5px solid green; /* Ajoute une bordure épaisse et verte */
+}
+
+.card-img-top {
+    border-top-left-radius: 20px;
+    border-top-right-radius: 100px;
+    width: 100%;
+    object-fit: cover;
+    padding: 0; /* Retire le padding pour que l'image remplisse complètement le conteneur */
+}
+
+.card {
+    position: relative;
+    border-radius: 30px;
+    box-shadow: rgba(50, 50, 93, 0.25) 0px 30px 60px -12px, rgba(0, 0, 0, 0.3) 0px 18px 36px -18px;
+    overflow: hidden; /* Assure que le débordement est caché */
+}
+
+.card-body {
+    padding: 20px; /* Réduit le padding */
+    margin-top: 0; /* Supprime ou ajuste la marge si nécessaire */
+}
+
+.card-body p {
+    white-space: nowrap; /* Empêche le texte de se briser sur plusieurs lignes */
+    overflow: hidden; /* Masque le débordement */
+    text-overflow: ellipsis; /* Ajoute les ellipses si le texte est trop long */
+}
+
+.card .frame {
+    border: 5px solid transparent;
+    padding: 10px;
+}
+
+
+
+.card-body p {
+    white-space: normal; /* Permet au texte de se briser sur plusieurs lignes */
+    max-height: 100px; /* Limite la hauteur du texte */
+    overflow: hidden; /* Masque le débordement */
+    -webkit-box-orient: vertical; /* Assure que le texte s'organise verticalement */
+}
+
+
+.card .frame {
+    border: 5px solid transparent;
+    padding: 10px;
+}
+
+.frame-orange {
+    border-color: orange;
+}
+
+.frame-green {
+    border-color: green;
+}
+
+.graph-title {
+    text-align: center;
+    font-weight: bold;
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+
+
+
+/* Styles pour le titre */
+h1 {
+    text-align: center; /* Centre le titre */
+    font-size: 2em; /* Taille du titre */
+    color: #004085; /* Couleur bleue */
+    margin-bottom: 20px; /* Marge en bas du titre */
+}
+
+/* Styles pour la section du slider */
+.slider-container {
+    display: flex; /* Utilise flexbox pour l'alignement */
+    flex-direction: column; /* Colonne pour empiler les éléments */
+    align-items: center; /* Centre les éléments horizontalement */
+    margin: 20px; /* Marge autour de la section */
+}
+
+/* Styles pour le label */
+label {
+    font-size: 1.2em; /* Taille du texte du label */
+    margin-bottom: 10px; /* Marge en bas du label */
+}
+
+/* Styles pour l'input range */
+input[type="range"] {
+    /* Supprime le style par défaut de la barre */
+    width: 100%; /* Prend toute la largeur de son conteneur */
+    height: 8px; /* Hauteur de la barre */
+    background: #ddd; /* Couleur de fond de la barre */
+    border-radius: 5px; /* Bords arrondis de la barre */
+    outline: none; /* Supprime le contour lors de la sélection */
+    margin-bottom: 10px; /* Marge en bas du slider */
+}
+
+/* Styles pour le span qui affiche l'année sélectionnée */
+#selected-year {
+    font-size: 1.5em; /* Taille du texte de l'année sélectionnée */
+    color: #004085; /* Couleur bleue */
+    margin-top: 10px; /* Marge en haut */
+}
+
+/* Styles pour les valeurs du slider */
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; /* Supprime le style par défaut du pouce */
+    appearance: none; /* Supprime le style par défaut du pouce */
+    width: 20px; /* Largeur du pouce */
+    height: 20px; /* Hauteur du pouce */
+    border-radius: 50%; /* Rend le pouce circulaire */
+    background: orange; /* Couleur du pouce */
+    cursor: pointer; /* Change le curseur lors du survol */
+}
+
+input[type="range"]::-moz-range-thumb {
+    width: 20px; /* Largeur du pouce */
+    height: 20px; /* Hauteur du pouce */
+    border-radius: 50%; /* Rend le pouce circulaire */
+    background: orange; /* Couleur du pouce */
+    cursor: pointer; /* Change le curseur lors du survol */
+}
+
+
+/* Pour les graphes*/
+.bar1 {
+    fill: skyblue; /* Remplace steelblue par skyblue */
+}
+.bar:hover {
+    fill: orange;
+}
+.axis path,
+.axis line {
+    fill: none;
+    stroke: black;
+    shape-rendering: crispEdges;
+}
+.bar {
+    fill: orange; /* Remplace steelblue par skyblue */
+}
+.bar:hover {
+    fill: orange;
+}
+.axis path,
+.axis line {
+    fill: none;
+    stroke: black;
+    shape-rendering: crispEdges;
+}
+
+
+
+text {
+    font-family: sans-serif;
+    font-size: 12px;
+}
+.arc path {
+    stroke: #fff;
+}

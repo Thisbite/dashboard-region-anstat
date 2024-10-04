@@ -16,12 +16,25 @@ import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import folium
+import json
+# On a une liste sur les régions de la CI, en effet elle est la page principale
+import matplotlib
+matplotlib.use('Agg')  # Utilisation du backend non interactif
+import matplotlib.pyplot as plt
 
+from flask import render_template
+import plotly.graph_objects as go
+import plotly.io as pio
+import branca.colormap as cm 
 
-
-
+from flask import Flask, render_template
+import json
+import folium
+import branca.colormap as cm
 
 app = Flask(__name__)
+
 
 # Configuration du logging
 logging.basicConfig(level=logging.DEBUG)
@@ -40,15 +53,63 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
+@app.route('/page')
+def index():
+    return render_template('index.html')
 
-# On a une liste sur les régions de la CI, en effet elle est la page principale
-import matplotlib
-matplotlib.use('Agg')  # Utilisation du backend non interactif
-import matplotlib.pyplot as plt
 
-from flask import render_template
-import plotly.graph_objects as go
-import plotly.io as pio
+@app.route('/statistiques')
+def statistiques():
+    # Charger le fichier GeoJSON
+    with open('static/carte/populations_ok.json', 'r') as f:
+        geojson_data = json.load(f)
+
+    # Extraire les noms des régions et les populations
+    regions = [feature['properties']['REGION'] for feature in geojson_data['features']]
+    populations = [feature['properties']['Population'] for feature in geojson_data['features']]
+
+    # Créer la carte centrée sur la Côte d'Ivoire
+    m = folium.Map(location=[7.539989, -5.547080], zoom_start=6)
+
+    # Créer une échelle de couleur basée sur la population
+    colormap = cm.LinearColormap(colors=['red', 'orange', 'yellow', 'green', 'blue'], vmin=min(populations), vmax=max(populations))
+
+    # Ajouter les polygones des régions à partir du GeoJSON avec les populations
+    folium.GeoJson(
+        geojson_data,
+        style_function=lambda feature: {
+            'fillColor': colormap(feature['properties']['Population']),
+            'color': 'black',
+            'weight': 2,
+            'fillOpacity': 0.7,
+        },
+        tooltip=folium.GeoJsonTooltip(
+            fields=["REGION", "Population"],
+            aliases=["Région: ", "Population: "],
+            localize=True
+        )
+    ).add_to(m)
+
+    # Ajouter la légende
+    colormap.add_to(m)
+
+    # Sauvegarder la carte sous forme de chaîne HTML
+    map_html = m._repr_html_()
+
+    # Renvoyer les données à la page HTML
+    return render_template('statistiques.html', map_html=map_html, regions=regions, populations=populations)
+
+
+
+
+
+
+
+
+
+
+
+
 
 @app.route('/')
 def list_regions():
@@ -59,8 +120,8 @@ def list_regions():
     years = [2019, 2020, 2021, 2022, 2023]
     population = [24.0, 27.0, 27.4, 29.8, 30.38]
     school_enrollment_rate = [75, 76, 78, 79, 80]
-    age_groups = ['0-14 ans', '15-24 ans', '25-54 ans', '55 - 59 ans','60 ans et plus']
-    age_distribution = [40, 20, 30, 10,18]
+    age_groups = ['0-14 ans', '15-24 ans', '25-54 ans', '55 - 59 ans','60 -64 ','65-69','70-74 ans']
+    age_distribution = [40, 20, 30, 10,18,20]
     config = {"displayModeBar": False}
 
     # Graphique 1 : Évolution de la population (plotly)
@@ -84,7 +145,7 @@ def list_regions():
     # Graphique 3 : Population par tranche d'âge (plotly)
     fig3 = go.Figure()
     fig3.add_trace(go.Bar(x=age_groups, y=age_distribution, name="Distribution d'âge", marker=dict(color='blue')))
-    fig3.update_layout(title="Population par tranche d'âge en 2023 (%)", 
+    fig3.update_layout(title="Population par tranche d'âge en 2023", 
                        xaxis_title="Tranche d'âge", yaxis_title="Pourcentage (%)")
 
     # Convertir les graphiques en HTML
@@ -94,13 +155,24 @@ def list_regions():
 
     # Passer les données aux templates
     return render_template('home.html',
-                           regions=regions,
+                           #regions=regions,
                            coord_list=[],  # Ajouter vos coordonnées ici
                            map_html=map_html,
                            population_graph_html=population_graph_html,
                            enrollment_graph_html=enrollment_graph_html,
-                           age_graph_html=age_graph_html)
+                           age_graph_html=age_graph_html,
+                           regions=regions)
 
+
+
+#Affichage de pdf
+@app.route('/region/<region>')
+def show_region_pdf(region):
+    pdf_path = f"static/pdfs/{region}.pdf"  # Chemin vers le fichier PDF
+    try:
+        return render_template('region_pdf.html', region=region)
+    except FileNotFoundError:
+        return f"PDF pour la région {region} non trouvé.", 404
 
 
 
@@ -144,12 +216,13 @@ def get_sous_prefectures():
     sous_prefectures = df[df['departement'] == departement]['sousprefecture'].sort_values().unique()
     return jsonify(list(sous_prefectures))
 
-# Route pour afficher la page de requête
 @app.route('/request_indicateur', methods=['GET', 'POST'])
 def request_indicateur():
     # Charger les données depuis MySQL
     df = qr.get_data_from_mysql()
-    indicateur2= request.args.get('indicateur2')
+
+    # Récupérer l'indicateur passé en paramètre dans l'URL
+    indicateur2 = request.args.get('indicateur2')
 
     # Obtenir les options pour chaque filtre (indicateur, région, etc.)
     indicateurs_options = qr.options_indicateur()
@@ -157,30 +230,29 @@ def request_indicateur():
 
     if request.method == 'POST':
         # Récupérer les sélections de l'utilisateur
-        indicateur_SELECT = request.args.get('indicateur2')
+        indicateur_SELECT = request.args.get('indicateur2')  # ou request.form.get selon ton besoin
         region_SELECT = request.form.get('region')
         departement_SELECT = request.form.get('departement')
         sousprefecture_SELECT = request.form.get('sous_prefecture')
 
-        # Commencer avec l'ensemble complet des données, sans colonnes inutiles
+        # Commencer avec l'ensemble complet des données
         df_filtered = df.drop(columns=['statut_approbation', 'id'], errors='ignore')
 
         # Appliquer les filtres en fonction des sélections
-        if indicateur_SELECT:
-            df_filtered = df_filtered[df_filtered['indicateur'] == indicateur_SELECT]
+        if indicateur_SELECT and 'indicateur' in df_filtered.columns:
+            df_filtered = df_filtered[df_filtered['indicateur'].str.strip().str.lower() == indicateur_SELECT.strip().lower()]
             print("Indicateur sélectionné:", indicateur_SELECT)
 
-        if region_SELECT:
+        if not df_filtered.empty and region_SELECT and 'region' in df_filtered.columns:
             df_filtered = df_filtered[df_filtered['region'] == region_SELECT]
             print("Région sélectionnée:", region_SELECT)
 
-        if departement_SELECT:
+        if not df_filtered.empty and departement_SELECT and 'departement' in df_filtered.columns:
             df_filtered = df_filtered[df_filtered['departement'] == departement_SELECT]
             print("Département sélectionné:", departement_SELECT)
 
-        if sousprefecture_SELECT:
+        if not df_filtered.empty and sousprefecture_SELECT and 'sousprefecture' in df_filtered.columns:
             df_filtered = df_filtered[df_filtered['sousprefecture'] == sousprefecture_SELECT]
-            # Supprimer les colonnes région et département si sous-préfecture est sélectionnée
             df_filtered = df_filtered.drop(columns=['region', 'departement'], errors='ignore')
             print("Sous-préfecture sélectionnée:", sousprefecture_SELECT)
 
@@ -188,25 +260,25 @@ def request_indicateur():
         df_filtered = df_filtered.dropna(axis=1, how='all')
         print("DataFrame filtré avant suppression des NaN:\n", df_filtered)
 
-        # Normaliser les valeurs de la colonne 'indicateur' pour éviter les erreurs d'espacement
-        df_filtered['indicateur'] = df_filtered['indicateur'].str.strip().str.lower()
-
         # Vérifier si le DataFrame filtré est vide
         if df_filtered.empty:
             message = "Aucune donnée disponible pour les critères sélectionnés."
             return render_template('result.html', available_columns=[], message=message)
+        
+        # Si le DataFrame contient des données, normaliser les valeurs de la colonne 'indicateur'
+        if 'indicateur' in df_filtered.columns:
+            df_filtered['indicateur'] = df_filtered['indicateur'].str.strip().str.lower()
+            print(df_filtered.head())
+
+        # Vérifier si le DataFrame filtré est vide après toutes les opérations
+        if df_filtered.empty:
+            message = "Aucune donnée disponible après le filtrage."
+            return render_template('result.html', available_columns=[], message=message)
         else:
-            # Après avoir filtré les données en fonction des critères de l'utilisateur
-            print("Indicateur sélectionné:", indicateur_SELECT)
-            print("Région sélectionnée:", region_SELECT)
-            print("Département sélectionné:", departement_SELECT)
-            print("Sous-préfecture sélectionnée:", sousprefecture_SELECT)
-            
-            
+            # Afficher les données filtrées
+            print(df_filtered.head())
 
-            print(df_filtered.head())  # Vérifie les premières lignes
-
-            # Stocker le DataFrame filtré dans la session (au format JSON) avec StringIO pour éviter l'avertissement FutureWarning
+            # Stocker le DataFrame filtré dans la session au format JSON
             from io import StringIO
             df_filtered_json = StringIO()
             df_filtered.to_json(df_filtered_json)
@@ -214,16 +286,18 @@ def request_indicateur():
 
             # Obtenir les colonnes disponibles pour la zone de dépôt
             available_columns = list(df_filtered.columns)
-            defintions=qr.definition_indicateur(indicateur_choisi=indicateur_SELECT)
-            mode_calcul=qr.mode_calcul_indicateur(mode_calcul=indicateur_SELECT)
-            print('defintions indicateur:',defintions)
-            print('Mode de calcul:',mode_calcul)
+            defintions = qr.definition_indicateur(indicateur_choisi=indicateur_SELECT)
+            mode_calcul = qr.mode_calcul_indicateur(mode_calcul=indicateur_SELECT)
 
-            # Afficher la page résultat avec les colonnes disponibles,pour les elements dans la page résultat c'est ici
+            print('Définitions de l\'indicateur:', defintions)
+            print('Mode de calcul:', mode_calcul)
+
+            # Afficher la page résultat avec les colonnes disponibles
             return render_template('result.html', available_columns=available_columns, 
                                    indicateur_SELECT=indicateur_SELECT,
                                    defintions=defintions,
                                    mode_calcul=mode_calcul)
+
 
     # Si GET, afficher la page de sélection avec les options de filtre
     regions = df['region'].dropna().sort_values().unique()
@@ -317,13 +391,9 @@ def domaines():
 
 #Requete domaine
 
-# Route pour afficher la page de requête
 @app.route('/domaines_indicateur', methods=['GET', 'POST'])
 def domaines_indicateur():
-    # Charger les données depuis MySQL
     df = qr.get_data_from_mysql()
-
-    # Obtenir les options pour chaque filtre (indicateur, région, etc.)
     indicateurs_options = qr.options_indicateur()
 
     if request.method == 'POST':
@@ -333,66 +403,54 @@ def domaines_indicateur():
         departement_SELECT = request.form.get('departement')
         sousprefecture_SELECT = request.form.get('sous_prefecture')
 
-        # Commencer avec l'ensemble complet des données, sans colonnes inutiles
+        # Commencer avec l'ensemble complet des données
         df_filtered = df.drop(columns=['statut_approbation', 'id'], errors='ignore')
 
-        # Appliquer les filtres en fonction des sélections
-        if indicateur_SELECT:
-            df_filtered = df_filtered[df_filtered['indicateur'] == indicateur_SELECT]
+        # Filtrer par indicateur
+        if indicateur_SELECT and 'indicateur' in df_filtered.columns:
+            df_filtered = df_filtered[df_filtered['indicateur'].str.strip().str.lower() == indicateur_SELECT.strip().lower()]
             print("Indicateur sélectionné:", indicateur_SELECT)
 
-        if region_SELECT:
+        # Filtrer par région
+        if not df_filtered.empty and region_SELECT and 'region' in df_filtered.columns:
             df_filtered = df_filtered[df_filtered['region'] == region_SELECT]
             print("Région sélectionnée:", region_SELECT)
 
-        if departement_SELECT:
+        # Filtrer par département
+        if not df_filtered.empty and departement_SELECT and 'departement' in df_filtered.columns:
             df_filtered = df_filtered[df_filtered['departement'] == departement_SELECT]
             print("Département sélectionné:", departement_SELECT)
 
-        if sousprefecture_SELECT:
+        # Filtrer par sous-préfecture
+        if not df_filtered.empty and sousprefecture_SELECT and 'sousprefecture' in df_filtered.columns:
             df_filtered = df_filtered[df_filtered['sousprefecture'] == sousprefecture_SELECT]
-            # Supprimer les colonnes région et département si sous-préfecture est sélectionnée
             df_filtered = df_filtered.drop(columns=['region', 'departement'], errors='ignore')
             print("Sous-préfecture sélectionnée:", sousprefecture_SELECT)
 
         # Supprimer les colonnes contenant uniquement des NaN
         df_filtered = df_filtered.dropna(axis=1, how='all')
-        print("DataFrame filtré avant suppression des NaN:\n", df_filtered)
 
-        # Normaliser les valeurs de la colonne 'indicateur' pour éviter les erreurs d'espacement
-        df_filtered['indicateur'] = df_filtered['indicateur'].str.strip().str.lower()
-
-        # Vérifier si le DataFrame filtré est vide
+        # Vérifier si le DataFrame est vide après filtrage
         if df_filtered.empty:
             message = "Aucune donnée disponible pour les critères sélectionnés."
             return render_template('result.html', available_columns=[], message=message)
-        else:
-            # Après avoir filtré les données en fonction des critères de l'utilisateur
-            print("Indicateur sélectionné:", indicateur_SELECT)
-            print("Région sélectionnée:", region_SELECT)
-            print("Département sélectionné:", departement_SELECT)
-            print("Sous-préfecture sélectionnée:", sousprefecture_SELECT)
 
+        # Stocker le DataFrame dans la session
+        from io import StringIO
+        df_filtered_json = StringIO()
+        df_filtered.to_json(df_filtered_json)
+        session['df_filtered'] = df_filtered_json.getvalue()
 
+        # Récupérer les colonnes disponibles
+        available_columns = list(df_filtered.columns)
+        defintions = qr.definition_indicateur(indicateur_choisi=indicateur_SELECT)
+        mode_calcul = qr.mode_calcul_indicateur(mode_calcul=indicateur_SELECT)
 
-            # Stocker le DataFrame filtré dans la session (au format JSON) avec StringIO pour éviter l'avertissement FutureWarning
-            from io import StringIO
-            df_filtered_json = StringIO()
-            df_filtered.to_json(df_filtered_json)
-            session['df_filtered'] = df_filtered_json.getvalue()
+        return render_template('result.html', available_columns=available_columns,
+                               indicateur_SELECT=indicateur_SELECT,
+                               defintions=defintions,
+                               mode_calcul=mode_calcul)
 
-            # Obtenir les colonnes disponibles pour la zone de dépôt
-            available_columns = list(df_filtered.columns)
-            defintions=qr.definition_indicateur(indicateur_choisi=indicateur_SELECT)
-            mode_calcul=qr.mode_calcul_indicateur(mode_calcul=indicateur_SELECT)
-
-            # Afficher la page résultat avec les colonnes disponibles
-            
-            return render_template('result.html', available_columns=available_columns, 
-                                   indicateur_SELECT=indicateur_SELECT,
-                                   defintions=defintions,
-                                   mode_calcul=mode_calcul
-                                   )
 
     # Si GET, afficher la page de sélection avec les options de filtre
     regions = df['region'].dropna().sort_values().unique()

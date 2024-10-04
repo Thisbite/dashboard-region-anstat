@@ -19,9 +19,8 @@
     <div class="header-secondary">
         <div class="nav-links">
             <a href="{{ url_for('dash_region') }}">Statistiques</a>
-            <a href="{{ url_for('domaines') }}">Domaines</a>
-            <a href="#apropos">A propos</a>
-            <a href="#connexion">Guide utilisateur</a>
+            <a href="{{ url_for('domaines') }}">Requête</a>
+            <a href="#connexion">Aide</a>
         </div>
 
         <!-- Formulaire de recherche -->
@@ -33,61 +32,77 @@
         </div>
     </div>
 
+      <!-- Barre de flash infos -->
+      <div class="flash-info-bar">
+        <marquee behavior="scroll" direction="left" scrollamount="5">
+            Info 1 : <a href="https://example.com/natalite">Le taux de natalité a augmenté de 2%</a> cette année. &nbsp; | &nbsp; 
+            Info 2 : <a href="https://example.com/scolarisation">85% des enfants sont maintenant scolarisés</a>. &nbsp; | &nbsp; 
+            Info 3 : <a href="https://example.com/chomage">Le taux de chômage a chuté à 5%</a>. &nbsp; | &nbsp; 
+            Info 4 : <a href="https://example.com/sante">70% de la population a accès à des soins de santé de base</a>.
+        </marquee>
+    </div>
+    
+    
+
     <div class="container">
         <div class="left-column">
             <div class="left-section">
+               <!-- La carte de la CI avec population-->
                 {{ map_html|safe }}
             </div>
 
             <div class="right-section">
-                <div class="box">
-                    <h3>Population de la Côte d'Ivoire en 2021:</h3>
-                    <div class="value">29 389 150</div>
+                <!-- Ajout de deux indicateurs (1 sur l'éducation et 1 sur la santé) -->
+                <div class="indicator-card">
+                    <div class="card-title">Taux d'Éducation</div>
+                    <div class="card-value">85%</div>
+                    <div class="card-description">Proportion des enfants scolarisés en 2021</div>
                 </div>
-                <div class="box">
-                    <h3>Nombre d'établissements scolaire en Côte d'Ivoire en 2024</h3>
-                    <div class="value">20,000</div>
+        
+                <div class="indicator-card">
+                    <div class="card-title">Accès aux soins</div>
+                    <div class="card-value">70%</div>
+                    <div class="card-description">Proportion de la population ayant accès aux soins de santé de base</div>
                 </div>
             </div>
         </div>
 
         <div class="right-column">
-            <h2>Liste des régions</h2>
+            <h2>Tableau de bord par région</h2>
             <ul class="region-list">
                 {% for region in regions %}
                 <li>
-                    <a href="{{ url_for('dash_region', region=region) }}">{{ region }}</a>
+                    <a href="{{ url_for('show_region_pdf', region=region) }}">{{ region }}</a>
                 </li>
                 {% endfor %}
             </ul>
         </div>
-    </div>
-
-    <!-- Graphe sur évolution -->
+    </div> 
+<!-- Conteneur principal avec un cadre autour des cartes -->
+<div class="frame-container">
     <div class="bottom-container">
         <div class="card">
-            <h3>Évolution de la population ivoirienne</h3>
+         
             <div class="card-content">
                 {{ population_graph_html|safe }}
             </div>
         </div>
 
-        <div class="card">
-            <h3>Taux de scolarisation ivoirienne</h3>
+        <div class="card">  
             <div class="card-content">
                 {{ enrollment_graph_html|safe }}
             </div>
         </div>
 
         <div class="card">
-            <h3>Population par tranche d'âge</h3>
             <div class="card-content">
                 {{ age_graph_html|safe }}
             </div>
         </div>
     </div>
+</div>
 
-
+   
     <!-- Script pour l'autocomplétion -->
     <script>
         $(function() {

@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/test.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <title>Tableau de bord avec D3.js</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        /* Assure-toi que les SVG remplissent complètement leur conteneur */
+        svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Assure-toi que les cartes ont une taille fixe ou maximum */
+        .card {
+          
+            height: 400px; /* Hauteur fixe pour les cartes */
+        }
+    </style>
+    
+</head>
+<body>
+    <h1>Tableau de bord Kabadougou</h1>
+
+   
+    
+    <div class="container">
+        <!-- Slider unique pour sélectionner l'année -->
+        <label for="year-slider">Année </label>
+        <input type="range" id="year-slider" min="{{min}}" max="{{max}}" step="1" value="2019" />
+        <span id="selected-year">2019</span>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 py-5"> 
+            <!-- Section pour Effectif de la population -->
+            <div class='col'> 
+                <div class="card" >
+                    <div class="frame frame-orange">
+                        <div class="graph-title">Effectif de la population (en milliers) par groupe d'âge</div>
+                        <svg id="population-chart" width="100%" height="400"></svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section pour Taux de scolarisation -->
+            <div class='col'> 
+                <div class="card" >
+                    <div class="frame frame-green">
+                        <div class="graph-title">Taux de scolarisation</div>
+                        <svg id="scolarisation-chart" width="100%" height="400"></svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section pour Production -->
+            <div class='col'> 
+                <div class="card">
+                    <div class="frame frame-orange">
+                        <div class="graph-title">Production de matière première agricole</div>
+                        <svg id="production-chart" width="100%" height="400"></svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section pour Effectif de la population par sexe -->
+            <div class='col'> 
+                <div class="card" >
+                    <div class="frame frame-green">
+                        <div class="graph-title">Effectif de la population par sexe</div>
+                        <svg id="population-sexe-chart" width="100%" height="400"></svg>
+                    </div>
+                </div>
+            </div>
+        
+
+        <!-- Section pour taux de pauvreté -->
+        <div class='col'> 
+            <div class="card">
+                <div class="frame frame-orange">
+                    <div class="graph-title">Taux de pauvrété</div>
+                    <svg id="taux-pauvrete-chart" width="100%" height="400"></svg>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Section pour taux de mortalité -->
+        <div class='col'> 
+            <div class="card">
+                <div class="frame frame-orange">
+                    <div class="graph-title">Taux de mortalité</div>
+                    <svg id="taux-mortalite-chart" width="100%" height="400"></svg>
+                </div>
+            </div>
+        </div>
+
+    </div> <!-- Fin de .row -->
+    </div> <!-- Fin de .container -->
+    <script>
+
+//Pauvrété
+// Dimensions et marges pour le taux de pauvreté
+var margin = { top: 20, right: 30, bottom: 40, left: 40 },
+    width = 400 - margin.left - margin.right,
+    height = 300 - margin.top - margin.bottom,
+    radius = Math.min(width, height) / 2;  // Rayon du camembert
+
+// Création du SVG pour le taux de pauvreté
+var svgPauvrete = d3.select("#taux-pauvrete-chart")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", "translate(" + (width / 2 + margin.left) + "," + (height / 2 + margin.top) + ")");
+
+// Échelle des couleurs
+var color = d3.scaleOrdinal(d3.schemeCategory10);
+
+// Fonction pour créer les arcs
+var arc = d3.arc()
+    .outerRadius(radius - 10)
+    .innerRadius(0);  // Camembert
+
+// Fonction pour les arcs des étiquettes
+var arcLabel = d3.arc()
+    .outerRadius(radius + 20)  // Éloigne les étiquettes du bord du camembert
+    .innerRadius(radius + 20);
+
+// Fonction pie pour calculer les angles
+var pie = d3.pie()
+    .sort(null)
+    .value(function(d) { return d.valeur; });
+
+function updatePauvreteChart(year) {
+    d3.json("/data").then(function(data) {
+        // Filtrer les données pour le taux de pauvreté par zone et année
+        var filteredData = data.filter(function(d) {
+            return d.indicateur === 'Taux de pauvreté' && d.annee === year;
+        });
+
+        // Vérifier si les données sont disponibles
+        if (filteredData.length === 0) {
+            console.log("Aucune donnée disponible pour l'année " + year);
+            return;
+        }
+
+        // Mettre en forme les données pour le layout pie
+        var arcs = pie(filteredData);
+
+        // Nettoyer le graphique avant de redessiner
+        svgPauvrete.selectAll("*").remove();
+
+        // Créer des groupes pour chaque section du camembert
+        var g = svgPauvrete.selectAll(".arc")
+            .data(arcs)
+            .enter().append("g")
+            .attr("class", "arc");
+
+        // Dessiner les sections du camembert
+        g.append("path")
+            .attr("d", arc)
+            .attr("fill", function(d) { return color(d.data.zone); }) // Utiliser la zone comme clé de couleur
+            .transition()  // Ajout d'une transition douce
+            .duration(750);
+
+        // Ajouter les étiquettes avec la valeur à l'extérieur du camembert
+        g.append("text")
+            .attr("transform", function(d) {
+                var pos = arcLabel.centroid(d);  // Positionner les étiquettes à l'extérieur
+                pos[0] = radius * (d.startAngle + d.endAngle < Math.PI ? 0.8 : -0.8);  // Ajustement gauche/droite
+                return "translate(" + pos + ")";
+            })
+            .attr("dy", "0.35em")
+            .style("text-anchor", function(d) {
+                return (d.startAngle + d.endAngle) < Math.PI ? "start" : "end";  // Alignement des étiquettes
+            })
+            .text(function(d) {
+                return d.data.zone + " (" + d.data.valeur + "%)";  // Affichage de l'étiquette avec la valeur
+            });
+
+        // Ajouter des lignes (flèches) pour relier les segments aux étiquettes
+        svgPauvrete.selectAll("polyline")
+            .data(arcs)
+            .enter().append("polyline")
+            .attr("points", function(d) {
+                var posA = arc.centroid(d);  // Position du centre du segment
+                var posB = arcLabel.centroid(d);  // Position de l'étiquette
+                posB[0] = radius * (d.startAngle + d.endAngle < Math.PI ? 0.8 : -0.8);  // Ajustement de la direction
+                return [posA, posB];  // Dessine la ligne du centre au bord du camembert puis vers l'étiquette
+            })
+            .style("fill", "none") // Pas de remplissage pour la ligne
+            .style("stroke", "gray") // Couleur de la ligne
+            .style("stroke-width", "1px");
+    });
+}
+
+// Mise à jour du graphique lorsque l'année change
+document.getElementById("year-slider").addEventListener("input", function() {
+    var year = +this.value;
+    document.getElementById("selected-year").textContent = year;
+    updatePauvreteChart(year);
+});
+
+// Initialisation du graphique pour l'année 2019
+updatePauvreteChart(2019);
+
+
+
+
+//Mortatlité
+// Dimensions et marges pour le taux de mortalité
+var margin = { top: 20, right: 30, bottom: 40, left: 40 },
+    width = 400 - margin.left - margin.right,
+    height = 300 - margin.top - margin.bottom,
+    radius = Math.min(width, height) / 2;  // Rayon du camembert
+
+// Création du SVG pour le taux de mortalité
+var svgMortalite = d3.select("#taux-mortalite-chart")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", "translate(" + (width / 2 + margin.left) + "," + (height / 2 + margin.top) + ")");
+
+// Échelle des couleurs
+var color = d3.scaleOrdinal(d3.schemeCategory10);
+
+// Fonction pour créer les arcs
+var arc = d3.arc()
+    .outerRadius(radius - 10)
+    .innerRadius(0);  // Camembert
+
+// Fonction pour les arcs des étiquettes
+var arcLabel = d3.arc()
+    .outerRadius(radius + 20)  // Éloigne les étiquettes du bord du camembert
+    .innerRadius(radius + 20);
+
+// Fonction pie pour calculer les angles
+var pie = d3.pie()
+    .sort(null)
+    .value(function(d) { return d.valeur; });
+
+function updateMortaliteChart(year) {
+    d3.json("/data").then(function(data) {
+        // Filtrer les données pour le taux de mortalité par zone et année
+        var filteredData = data.filter(function(d) {
+            return d.indicateur === 'Taux de mortalité' && d.annee === year;
+        });
+
+        // Vérifier si les données sont disponibles
+        if (filteredData.length === 0) {
+            console.log("Aucune donnée disponible pour l'année " + year);
+            return;
+        }
+
+        // Mettre en forme les données pour le layout pie
+        var arcs = pie(filteredData);
+
+        // Nettoyer le graphique avant de redessiner
+        svgMortalite.selectAll("*").remove();
+
+        // Créer des groupes pour chaque section du camembert
+        var g = svgMortalite.selectAll(".arc")
+            .data(arcs)
+            .enter().append("g")
+            .attr("class", "arc");
+
+        // Dessiner les sections du camembert
+        g.append("path")
+            .attr("d", arc)
+            .attr("fill", function(d) { return color(d.data.zone); }) // Utiliser la zone comme clé de couleur
+            .transition()  // Ajout d'une transition douce
+            .duration(750);
+
+        // Ajouter les étiquettes avec la valeur à l'extérieur du camembert
+        g.append("text")
+            .attr("transform", function(d) {
+                var pos = arcLabel.centroid(d);  // Positionner les étiquettes à l'extérieur
+                pos[0] = radius * (d.startAngle + d.endAngle < Math.PI ? 0.8 : -0.8);  // Ajustement gauche/droite
+                return "translate(" + pos + ")";
+            })
+            .attr("dy", "0.35em")
+            .style("text-anchor", function(d) {
+                return (d.startAngle + d.endAngle) < Math.PI ? "start" : "end";  // Alignement des étiquettes
+            })
+            .text(function(d) {
+                return d.data.zone + " (" + d.data.valeur + "‰)";  // Affichage de l'étiquette avec la valeur
+            });
+
+        // Ajouter des lignes (flèches) pour relier les segments aux étiquettes
+        svgMortalite.selectAll("polyline")
+            .data(arcs)
+            .enter().append("polyline")
+            .attr("points", function(d) {
+                var posA = arc.centroid(d);  // Position du centre du segment
+                var posB = arcLabel.centroid(d);  // Position de l'étiquette
+                posB[0] = radius * (d.startAngle + d.endAngle < Math.PI ? 0.8 : -0.8);  // Ajustement de la direction
+                return [posA, posB];  // Dessine la ligne du centre au bord du camembert puis vers l'étiquette
+            })
+            .style("fill", "none") // Pas de remplissage pour la ligne
+            .style("stroke", "gray") // Couleur de la ligne
+            .style("stroke-width", "1px");
+    });
+}
+
+// Mise à jour du graphique lorsque l'année change
+document.getElementById("year-slider").addEventListener("input", function() {
+    var year = +this.value;
+    document.getElementById("selected-year").textContent = year;
+    updateMortaliteChart(year);
+});
+
+// Initialisation du graphique pour l'année 2019
+updateMortaliteChart(2019);
+
+
+
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        // Dimensions et marges pour production
+        var margin = {top: 20, right: 30, bottom: 40, left: 40},
+        width = 400 - margin.left - margin.right,
+        height = 300 - margin.top - margin.bottom,
+        radius = Math.min(width, height) / 2;  // Rayon du camembert
+       
+       // Création du SVG pour le camembert
+       var svgProduction = d3.select("#production-chart")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + (width / 2 + margin.left) + "," + (height / 2 + margin.top) + ")");
+       
+       // Échelle des couleurs
+       var color = d3.scaleOrdinal(d3.schemeCategory10);
+       
+      // Fonction pour créer les arcs
+var arc = d3.arc()
+.outerRadius(radius - 10)
+.innerRadius(0);  // Camembert
+
+// Fonction pour les arcs des étiquettes (placées légèrement à l'extérieur du camembert)
+var arcLabel = d3.arc()
+.outerRadius(radius + 20)  // Éloigne les étiquettes du bord du camembert
+.innerRadius(radius + 20);
+
+// Fonction pie pour calculer les angles
+var pie = d3.pie()
+.sort(null)
+.value(function(d) { return d.valeur; });
+
+function updateProductionChart(type, year) {
+d3.json("/data").then(function(data) {
+    // Filtrer les données selon l'année et le type
+    var filteredData = data.filter(function(d) {
+        return d.indicateur === type && d.annee === year;
+    });
+
+    // Calculer la somme totale des valeurs pour obtenir les pourcentages
+    var total = d3.sum(filteredData, function(d) { return d.valeur; });
+
+    // Mettre en forme les données pour le layout pie
+    var arcs = pie(filteredData);
+
+    // Nettoyer le graphique avant de redessiner
+    svgProduction.selectAll("*").remove();
+
+    // Créer des groupes pour chaque section du camembert
+    var g = svgProduction.selectAll(".arc")
+        .data(arcs)
+        .enter().append("g")
+        .attr("class", "arc");
+
+    // Dessiner les sections du camembert
+    g.append("path")
+        .attr("d", arc)
+        .attr("fill", function(d) { return color(d.data.produit); })
+        .transition()  // Ajout d'une transition douce
+        .duration(750);
+
+    // Ajouter les étiquettes avec le pourcentage à l'extérieur du camembert
+    g.append("text")
+        .attr("transform", function(d) {
+            var pos = arcLabel.centroid(d);  // Positionner les étiquettes à l'extérieur
+            pos[0] = radius * (d.startAngle + d.endAngle < Math.PI ? 0.8 : -0.8);  // Ajustement gauche/droite
+            return "translate(" + pos + ")";
+        })
+        .attr("dy", "0.35em")
+        .style("text-anchor", function(d) {
+            return (d.startAngle + d.endAngle) < Math.PI ? "start" : "end";  // Alignement des étiquettes
+        })
+        .text(function(d) {
+            var pourcentage = (d.data.valeur / total * 100).toFixed(1);  // Calcul du pourcentage
+            return d.data.produit + " (" + pourcentage + "%)";  // Affichage de l'étiquette
+        });
+
+    // Ajouter des lignes (flèches) pour relier les segments aux étiquettes
+    svgProduction.selectAll("polyline")
+        .data(arcs)
+        .enter().append("polyline")
+        .attr("points", function(d) {
+            var posA = arc.centroid(d);  // Position du centre du segment
+            var posB = arcLabel.centroid(d);  // Position de l'étiquette
+            posB[0] = radius * (d.startAngle + d.endAngle < Math.PI ? 0.8 : -0.8);  // Ajustement de la direction
+            return [posA, posB];  // Dessine la ligne du centre au bord du camembert puis vers l'étiquette
+        })
+        .style("fill", "blue")
+        .style("stroke", "red")
+        .style("stroke-width", "1px");
+});
+}
+
+       
+       // Mise à jour du graphique lorsque l'année change
+       document.getElementById("year-slider").addEventListener("input", function() {
+        var year = +this.value;
+        document.getElementById("selected-year").textContent = year;
+        updateProductionChart("Production", year);
+       });
+       
+       // Initialisation du graphique pour l'année 2019
+       updateProductionChart("Production", 2019);
+       
+       
+       
+       
+       // Diagramme en bande-------------------------------------
+       
+              // Dimensions des graphiques
+       var margin = {top: 20, right: 30, bottom: 40, left: 40},
+       width = 400 - margin.left - margin.right,
+       height = 300 - margin.top - margin.bottom;
+       
+       // Initialisation des graphiques
+       var svgPopulation = d3.select("#population-chart"),
+       gPopulation = svgPopulation.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+       
+       var svgScolarisation = d3.select("#scolarisation-chart"),
+       gScolarisation = svgScolarisation.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+       
+       var svgPopulationSexe = d3.select("#population-sexe-chart"),
+       gPopulationSexe = svgPopulationSexe.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+       
+       // Échelles des graphiques
+       var xPopulation = d3.scaleBand().range([0, width]).padding(0.1);
+       var yPopulation = d3.scaleLinear().range([height, 0]);
+       
+       var xScolarisation = d3.scaleBand().range([0, width]).padding(0.1);
+       var yScolarisation = d3.scaleLinear().range([height, 0]);
+       
+       var xPopulationSexe  = d3.scaleBand().range([0, width]).padding(0.1);
+       var yPopulationSexe  = d3.scaleLinear().range([height, 0]);
+       
+       // Axes
+       var xAxisPopulation = gPopulation.append("g").attr("class", "axis axis--x").attr("transform", "translate(0," + height + ")");
+       var yAxisPopulation = gPopulation.append("g").attr("class", "axis axis--y");
+       
+       var xAxisScolarisation = gScolarisation.append("g").attr("class", "axis axis--x").attr("transform", "translate(0," + height + ")");
+       var yAxisScolarisation = gScolarisation.append("g").attr("class", "axis axis--y");
+       
+       var xAxisPopulationSexe =gPopulationSexe .append("g").attr("class", "axis axis--x").attr("transform", "translate(0," + height + ")");
+       var yAxisPopulationSexe = gPopulationSexe .append("g").attr("class", "axis axis--y");
+       
+       // Fonction pour mettre à jour les graphiques
+       function updateChart(type, year) {
+       d3.json("/data").then(function(data) {
+           var filteredData = data.filter(function(d) {
+               return d.indicateur === type && d.annee === year;
+           });
+       
+           if (type === "Effectif de la population") {
+               xPopulation.domain(filteredData.map(function(d) { return d.groupe_age; }));
+               // Définir un domaine Y allant de 0 à 150000
+                    yPopulation.domain([0, 150000]);
+
+                    // Appel de l'axe Y avec des ticks personnalisés
+                    yAxisPopulation.call(d3.axisLeft(yPopulation)
+                        .tickValues([0, 5000, 15000, 50000, 100000, 150000])  // Valeurs personnalisées pour les ticks
+                        .tickFormat(function(d) {
+                            if (d === 0) {
+                                return "0";  // Affichage du tick pour 0
+                            } else if (d === 5000) {
+                                return "5";  // Affichage pour 5000
+                            } else if (d === 15000) {
+                                return "15";  // Affichage pour 15000
+                            } else if (d === 50000) {
+                                return "50";  // Affichage pour 50000
+                            } else if (d === 100000) {
+                                return "100";  // Affichage pour 100000
+                            } else if (d === 150000) {
+                                return "100+";  // Affichage pour 150000 et plus
+                            }
+                        })
+                    );
+
+       
+                    xAxisPopulation.call(d3.axisBottom(xPopulation))
+                    .selectAll("text")  // Sélectionner tous les éléments de texte des ticks
+                    .style("text-anchor", "end")  // Ancrer le texte à la fin pour que la rotation soit propre
+                    .attr("dx", "-0.8em")  // Décalage horizontal
+                    .attr("dy", "0.15em")  // Décalage vertical
+                    .attr("transform", "rotate(-45)");  // Appliquer une rotation de 45 degrés vers la gauche
+                
+       
+               var bars = gPopulation.selectAll(".bar1").data(filteredData);
+               bars.enter().append("rect")
+                   .attr("class", "bar1")
+                   .attr("x", function(d) { return xPopulation(d.groupe_age); })
+                   .attr("y", function(d) { return yPopulation(d.valeur); })
+                   .attr("width", xPopulation.bandwidth()*0.5)
+                   .attr("height", function(d) { return height - yPopulation(d.valeur); })
+                   .merge(bars)
+                   .transition()
+                   .duration(750)
+                   .attr("x", function(d) { return xPopulation(d.groupe_age); })
+                   .attr("y", function(d) { return yPopulation(d.valeur); })
+                   .attr("width", xPopulation.bandwidth()*0.5)
+                   .attr("height", function(d) { return height - yPopulation(d.valeur); });
+                   
+       
+               bars.exit().remove();
+           } else if (type === "Taux de scolarisation") {
+               xScolarisation.domain(filteredData.map(function(d) { return d.cycle_scolaire; }));
+               yScolarisation.domain([0, 100]);
+       
+               
+               xAxisScolarisation.call(d3.axisBottom(xScolarisation))
+                .selectAll("text")  // Sélectionner tous les éléments de texte des ticks
+                .style("text-anchor", "end")  // Ancrer le texte à la fin pour que la rotation soit propre
+                .attr("dx", "-0.8em")  // Décalage horizontal
+                .attr("dy", "0.15em")  // Décalage vertical
+                .attr("transform", "rotate(-30)");  // Appliquer une rotation de 45 degrés vers la gauche
+
+
+
+
+
+
+               yAxisScolarisation.call(d3.axisLeft(yScolarisation));
+       
+               var bars = gScolarisation.selectAll(".bar").data(filteredData);
+               bars.enter().append("rect")
+                   .attr("class", "bar")
+                   .attr("x", function(d) { return xScolarisation(d.cycle_scolaire); })
+                   .attr("y", function(d) { return yScolarisation(d.valeur); })
+                   .attr("width", xScolarisation.bandwidth()*0.5)
+                   .attr("height", function(d) { return height - yScolarisation(d.valeur); })
+                   .merge(bars)
+                   .transition()
+                   .duration(750)
+                   .attr("x", function(d) { return xScolarisation(d.cycle_scolaire); })
+                   .attr("y", function(d) { return yScolarisation(d.valeur); })
+                   .attr("width", xScolarisation.bandwidth()*0.5)
+                   .attr("height", function(d) { return height - yScolarisation(d.valeur); });
+       
+               bars.exit().remove();
+           }
+       
+           else if (type === "Effectif de la population1") { // Correction du nom de l'indicateur
+           // Définir le domaine de l'axe des x
+           xPopulationSexe.domain(filteredData.map(function(d) { return d.sexe; }));
+           
+           // Correction : la définition du domaine pour l'axe y doit être ici, et pas à la place de xPopulationSexe
+          
+           yPopulationSexe.domain([1000000, 8000000]);
+
+// Appel de l'axe Y avec des ticks personnalisés
+yAxisPopulationSexe.call(d3.axisLeft(yPopulationSexe)
+    .tickValues([1000000, 2000000, 3000000, 4000000, 5000000, 8000000])  // Valeurs spécifiques des ticks
+    .tickFormat(function(d) {
+        // Affichage des valeurs avec un format plus compact
+        if (d === 1000000) {
+            return "1M";  // Affichage pour 1 million
+        } else if (d === 2000000) {
+            return "2M";  // Affichage pour 2 millions
+        } else if (d === 3000000) {
+            return "3M";  // Affichage pour 3 millions
+        } else if (d === 4000000) {
+            return "4M";  // Affichage pour 4 millions
+        } else if (d === 5000000) {
+            return "5M";  // Affichage pour 5 millions
+        } else if (d === 8000000) {
+            return "6M+";  // Affichage pour 6 millions et plus
+        }
+    })
+);
+
+
+       
+           // Mettre à jour les axes
+           xAxisPopulationSexe.call(d3.axisBottom(xPopulationSexe));
+       
+       
+           // Sélection des barres
+           var bars = gPopulationSexe.selectAll(".bar").data(filteredData);
+       
+           // Créer les nouvelles barres
+           bars.enter().append("rect")
+               .attr("class", "bar")
+               .attr("x", function(d) { return xPopulationSexe(d.sexe); })
+               .attr("y", function(d) { return yPopulationSexe(d.valeur); })
+               .attr("width", xPopulationSexe.bandwidth()*0.5)
+               .attr("height", function(d) { return height - yPopulationSexe(d.valeur); })
+               .merge(bars)
+               .transition()
+               .duration(750)  
+               .attr("x", function(d) { return xPopulationSexe(d.sexe); })
+               .attr("y", function(d) { return yPopulationSexe(d.valeur); })
+               .attr("width", xPopulationSexe.bandwidth()*0.5)
+               .attr("height", function(d) { return height - yPopulationSexe(d.valeur); });
+       
+           // Supprimer les barres qui ne sont plus nécessaires
+           bars.exit().remove();
+       }
+       
+       });
+       }
+       
+       
+       
+       
+       
+       // Mise à jour des graphiques lorsque l'année change
+       document.getElementById("year-slider").addEventListener("input", function() {
+       var year = +this.value;
+       document.getElementById("selected-year").textContent = year;
+       
+       updateChart("Effectif de la population", year);
+       updateChart("Effectif de la population1", year);
+       updateChart("Taux de scolarisation", year);
+       updateChart("Production", year);
+       });
+       
+       // Initialisation des graphiques
+       updateChart("Effectif de la population", {{min}});
+       updateChart("Taux de scolarisation",{{min}});
+       updateChart("Effectif de la population1", {{min}});
+       updateProductionChart("Production",{{min}});
+       
+       
+           </script>
+</body>
+</html>

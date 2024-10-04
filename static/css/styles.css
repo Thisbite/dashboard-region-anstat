@@ -25,7 +25,7 @@ body {
 
 .nav-links a {
     text-decoration: none;
-    color: #004085;
+    color: #4204d4;
     padding: 10px 20px;
     font-size: 18px;
     margin: 0 10px;
@@ -34,7 +34,7 @@ body {
 }
 
 .nav-links a:hover {
-    background-color: #004085;
+    background-color: #007bff;
     color: white;
 }
 
@@ -75,66 +75,57 @@ body {
 
 .left-column {
     flex: 2;
-    background-color: white;
-    padding: 20px;
+    padding: 10px;
     border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 0 10px rgba(23, 2, 251, 0.1);
     display: flex;
-    gap: 20px;
+    gap: 10px;
     box-sizing: border-box;
+
+    position: relative; /* Nécessaire pour l'effet de superposition */
+ 
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    z-index: 1; /* Assure que le contenu reste au-dessus */
+
+    /* Superposition semi-transparente pour fondre l'image */
+    background-color:#007bff; /* Couleur principale avec opacité de 80% */
 }
-.left-column h2 {
-    font-size: 24px;
-    margin-bottom: 20px;
+
+/* Optionnel pour un effet d'opacité plus subtile sur l'image entière */
+.left-column::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ef8809; /* Superposition blanche translucide */
+    z-index: -1; /* Place la superposition sous le contenu */
+    border-radius: 8px; /* Coins arrondis comme le conteneur */
+}
+
+.left-column h5 {
+    font-size: 14px;
+    margin-bottom: 5px;
     color: #004085;
 }
 
 .left-column .left-section {
     flex: 3;
-    border: 2px dashed #004085;
     display: flex;
-    justify-content: center;
-    align-items: center;
+    flex-direction: column;       /* Organiser le contenu en colonne */
+    justify-content: flex-start;  /* Aligner le contenu au début (titre en haut) */
+    align-items: center;          /* Centrer horizontalement */
     color: #666;
     font-size: 20px;
-    height: 400px;
+    height: auto;                 /* Ajuster la hauteur en fonction du contenu */
     border-radius: 8px;
     padding: 20px;
+    background-color: rgba(255, 255, 255, 0.8); /* Fond blanc avec opacité pour lisibilité */
 }
 
-
-.left-column .right-section {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    padding: 20px; /* Ajout d'un padding pour espacer */
-}
-
-.right-section .box {
-    flex: 1;
-    border: 2px dashed #004085;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    color: #666;
-    font-size: 18px;
-    height: 180px;
-    border-radius: 8px;
-    flex-direction: column;
-}
-
-.right-section .box h3 {
-    margin-bottom: 5px;
-    color: #004085;
-}
-
-.right-section .box .value {
-    font-size: 22px;
-    font-weight: bold;
-    color: #333;
-}
 
 .right-column {
     flex: 1;
@@ -149,18 +140,19 @@ body {
 .right-column h2 {
     font-size: 24px;
     margin-bottom: 20px;
-    color: #004085;
+    color: #1b04ca;
 }
 
 .region-list {
     list-style: none;
     padding: 0;
+    
 }
 
 .region-list li {
     padding: 10px;
     margin-bottom: 10px;
-    background-color: #f8f9fa;
+    background: #e2e6ea;
     border-radius: 5px;
     box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
     transition: background-color 0.3s ease;
@@ -172,60 +164,61 @@ body {
 
 .region-list li a {
     text-decoration: none;
-    color: #004085;
+    color: blue;
 }
 
+
+
+/* Encadrement pour le titre */
+/* Encadrement pour le titre */
+.map-title-frame {
+      /*   border: 2px solid #333;    Bordure de l'encadrement */
+    padding: 5px;               /* Espace intérieur du cadre */
+    border-radius: 8px;          /* Coins arrondis */
+    margin-bottom: 15px;         /* Espace entre le cadre et la carte */
+    background-color:transparent;   /* Couleur d'arrière-plan douce */
+    width: 100%;                 /* Prendre toute la largeur disponible */
+    text-align: center;          /* Centrer le contenu (le titre) */
+    box-sizing: border-box;      /* Inclure la bordure et le padding dans la largeur */
+}
+
+/* Titre de la carte */
+.map-title {
+    font-size: 24px;             /* Taille du texte */
+    color: #333;                 /* Couleur du texte */
+    margin: 0;                   /* Retirer toute marge par défaut du titre */
+}
+
+
+
+/* Conteneur principal avec un style de cadre 
+Bloc du bas
+
+*/
+.frame-container {
+    padding: 20px;
+    border: 2px solid #de6422; /* Bordure bleue autour du cadre */
+    border-radius: 10px; /* Coins arrondis pour le cadre */
+    background-color: rgba(240, 248, 255, 0.8); /* Fond légèrement transparent */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); /* Ombre portée pour donner un effet de profondeur */
+    margin: 20px;
+}
+
+/* Conteneur des cartes */
 .bottom-container {
     display: flex;
     justify-content: space-between;
-    gap: 20px;
+    gap: 20px; /* Espace entre les cartes */
     padding: 20px 0;
 }
 
-.form-container {
-    flex: 1;
-    
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;  /* Aligne le contenu en haut */
-    align-items: center;
-    text-align: center;
-    color: #666;
-    font-size: 18px;
-    height: 300px;  /* Augmente la hauteur pour s'adapter à l'image et au texte */
-    border-radius: 8px;
-    padding: 15px;
-}
-
-.form-container h3 {
-    margin-bottom: 15px;  /* Ajoute un peu plus d'espace */
-    color: #004085;
-}
-
-.form-container img {
-    max-width: 100%;      /* Ajuste la largeur à 100% du conteneur */
-    height: auto;         /* Garde le ratio aspect de l'image */
-    max-height: 250px;    /* Limite la hauteur maximale pour garder un bon ratio */
-    border-radius: 8px;
-    object-fit: contain;  /* S'assure que l'image est bien contenue dans le conteneur sans être coupée */
-}
-
-canvas {
-    border: 1px solid #004085;
-    width: 100%;
-    height: 500px;
-}
-
-
-
-
+/* Style des cartes */
 .card {
     background-color: white;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     border-radius: 8px;
     width: 30%;
     padding: 20px;
-    margin: 10px;
     text-align: center;
     transition: transform 0.2s;
 }
@@ -239,6 +232,7 @@ canvas {
     margin-bottom: 15px;
 }
 
+/* Contenu des cartes */
 .card-content {
     margin-top: 20px;
 }
@@ -246,43 +240,89 @@ canvas {
 /* Pour ajuster les graphiques dans les cartes */
 .card-content iframe {
     width: 100%;
-    height: 300px;
+    height: 400px;
     border: none;
 }
 
-/* Box style */
-.box {
-    background-color: #f1f1f1;
-    padding: 15px;
+
+
+/* Styles pour le conteneur de la colonne droite */
+.right-section {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    align-items: center;
+    margin-top: 20px;
+}
+
+/* Styles pour les cartes */
+.indicator-card {
+    background-color: #f8f9fa; /* Couleur de fond des cartes */
+    border: 1px solid #ddd;    /* Bordure fine et claire */
+    border-radius: 10px;       /* Coins arrondis */
+    width: 200px;              /* Largeur des cartes */
+    padding: 20px;             /* Espacement interne */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Ombre légère */
+    text-align: center;        /* Centrer le texte */
+    margin: 10px;              /* Marges entre les cartes */
+    transition: transform 0.3s ease; /* Animation au survol */
+}
+
+.indicator-card:hover {
+    transform: scale(1.05);    /* Zoom léger lors du survol */
+}
+
+/* Style pour le titre des indicateurs */
+.card-title {
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
     margin-bottom: 10px;
+}
+
+/* Style pour la valeur des indicateurs */
+.card-value {
+    font-size: 24px;
+    font-weight: bold;
+    color: #007bff;
+    margin-bottom: 5px;
+}
+
+/* Style pour la description des indicateurs */
+.card-description {
+    font-size: 14px;
+    color: #555;
+}
+
+
+/* Styles pour la barre de flash infos */
+.flash-info-bar {
+    background-color: #007bff; /* Couleur de fond */
+    color: white;               /* Couleur du texte */
+    padding: 10px;             /* Espacement interne */
+    font-size: 16px;           /* Taille de police */
+    font-weight: bold;         /* Texte en gras */
+    position: relative;        /* Pour le positionnement relatif */
+    z-index: 10;               /* Assurer que la barre est au-dessus d'autres éléments */
+}
+
+/* Marquee peut être personnalisé pour plus d'options */
+marquee {
+    white-space: nowrap;       /* Empêche le texte de passer à la ligne */
+}
+
+.flash-info-bar a {
+    text-decoration: none;  /* Enlève le soulignement */
+    color: inherit;  /* Utilise la même couleur que le texte environnant */
+    font-weight: bold;  /* Rend le texte des liens en gras (optionnel) */
+}
+
+.flash-info-bar {
+  
+    padding: 10px;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    overflow: hidden;
     border-radius: 8px;
 }
-
-.box h3 {
-    margin-bottom: 10px;
-    font-size: 1.2em;
-    color: #333;
-}
-
-.box .value {
-    font-size: 1.5em;
-    color: #007bff;
-}
-
-/* Responsive */
-@media screen and (max-width: 768px) {
-    .container {
-        flex-direction: column;
-    }
-
-    .bottom-container {
-        flex-direction: column;
-    }
-
-    .card {
-        width: 100%;
-    }
-}
-
-
-

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statistiques des Régions</title>
+    <!-- Inclusion de Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Style pour la légende dynamique */
+        .chart-legend {
+            cursor: pointer;
+        }
+
+        .chart-legend:hover {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+
+
+
+    <!-- Conteneur pour le graphe -->
+    <div style="width: 60%; margin: auto;">
+        <canvas id="populationChart"></canvas>
+    </div>
+
+    <script>
+        // Vérifie si les données sont bien chargées depuis Python
+        console.log("Régions : ", {{ regions|tojson }});
+        console.log("Populations : ", {{ populations|tojson }});
+
+        // Initialiser le graphe Chart.js
+        const ctx = document.getElementById('populationChart').getContext('2d');
+        const data = {
+            labels: {{ regions|tojson }},  // Les noms des régions
+            datasets: [{
+                label: 'Population',
+                data: {{ populations|tojson }},  // Les populations correspondantes
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            }]
+        };
+
+        const config = {
+            type: 'bar',  // Type de graphe (barres)
+            data: data,
+            options: {
+                plugins: {
+                    legend: {
+                        display: true,
+                        onHover: function(event, legendItem) {
+                            document.body.style.cursor = 'pointer';
+                        },
+                        onLeave: function() {
+                            document.body.style.cursor = 'default';
+                        },
+                    }
+                },
+                responsive: true,  // Rend le graphique responsive
+                scales: {
+                    y: {
+                        beginAtZero: true,  // Début des axes à 0
+                    }
+                }
+            }
+        };
+
+        new Chart(ctx, config);
+    </script>
+
+</body>
+</html>

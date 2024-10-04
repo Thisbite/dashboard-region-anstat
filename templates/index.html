@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Population selon les régions, 2021</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .frame {
+            width: 80%;
+            margin: 20px auto;
+            border: 2px solid #ccc;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        #map {
+            width: 100%;
+            height: 600px;
+        }
+        .region {
+            stroke: #000;
+            stroke-width: 1px;
+        }
+        .legend {
+            position: fixed;
+            bottom: 10px;
+            left: 40%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 1px;
+            border-radius: 8px;
+            box-shadow: 2px 2px 10px rgba(0,0,0,0.4);
+            cursor: pointer;
+            display: flex;
+            flex-direction: row;
+        }
+        .legend-item {
+            margin: 0 5px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            margin-right: 5px;
+            border: 1px solid #000;
+        }
+        .tooltip {
+            position: absolute;
+            background-color: white;
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 8px;
+            pointer-events: none;
+            display: none;
+            font-size: 12px;
+            box-shadow: 2px 2px 10px rgba(0,0,0,0.2);
+        }
+        h1 {
+            position: fixed; 
+            top: 1px; left: 50%; 
+            transform: translateX(-50%);
+            z-index: 1000;
+            background-color: white; 
+            padding: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 8px;
+            box-shadow: 2px 2px 10px rgba(0,0,0,0.4);
+        }
+        .compass {
+            position: fixed;
+            top: 50px;
+            right: 50px;
+            z-index: 1000;
+            width: 100px;
+            height: 100px;
+            background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/d/d2/Compass_rose_pale.svg/1024px-Compass_rose_pale.svg.png');
+            background-size: cover;
+            background-repeat: no-repeat;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="frame">
+        <h1>Population selon les régions, 2021</h1>
+        <div id="map"></div>
+        <div class="legend" id="legend"></div>
+    </div>
+
+    <div class="tooltip" id="tooltip"></div>
+    <div class="compass"></div>
+
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <script src="https://d3js.org/topojson.v3.min.js"></script>
+    <script>
+        const width = 960, height = 600;
+
+        // Créer une carte SVG
+        const svg = d3.select("#map").append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+        const projection = d3.geoMercator()
+            .center([-5.547080, 7.539989]) // Centrer sur la Côte d'Ivoire
+            .scale(3000)
+            .translate([width / 2, height / 2]);
+
+        const path = d3.geoPath().projection(projection);
+
+        const color = d3.scaleLinear()
+            .domain([0, 1000000, 3000000, 5000000]) // Domain personnalisé selon les populations
+            .range(['red', 'orange', 'lightgreen', 'green']);
+
+        // Charger le fichier GeoJSON
+        d3.json("static/carte/populations_ok.json").then(function(geojson) {
+            const regions = svg.selectAll(".region")
+                .data(geojson.features)
+                .enter().append("path")
+                .attr("class", "region")
+                .attr("d", path)
+                .attr("fill", d => color(d.properties.Population))
+                .on("mouseover", function(event, d) {
+                    d3.select("#tooltip")
+                        .style("left", (event.pageX + 5) + "px")
+                        .style("top", (event.pageY - 28) + "px")
+                        .style("display", "block")
+                        .html(`<strong>Région:</strong> ${d.properties.REGION}<br><strong>Population:</strong> ${d.properties.Population}`);
+                })
+                .on("mouseout", function() {
+                    d3.select("#tooltip").style("display", "none");
+                });
+
+            // Créer la légende
+            const legend = d3.select("#legend");
+            const legendColors = color.range();
+
+            legendColors.forEach((col, i) => {
+                const legendItem = legend.append("div")
+                    .attr("class", "legend-item")
+                    .on("click", function() {
+                        // Filtrer les régions en fonction de la couleur
+                        regions.attr("opacity", function(d) {
+                            return color(d.properties.Population) === col ? 1 : 0.1;
+                        });
+                    });
+                
+                legendItem.append("div")
+                    .attr("class", "legend-color")
+                    .style("background-color", col);
+                
+                legendItem.append("span")
+                    .text(`${color.domain()[i]}+`);
+            });
+
+            // Permettre de réinitialiser la carte en cliquant de nouveau sur la légende
+            legend.selectAll(".legend-item").on("click", function(d) {
+                const selectedColor = d3.select(this).select(".legend-color").style("background-color");
+                const currentOpacity = d3.select(this).attr("data-active") === "true" ? 1 : 0.1;
+
+                regions.attr("opacity", region => {
+                    const regionColor = d3.color(color(region.properties.Population)).toString();
+                    return (regionColor === selectedColor) ? currentOpacity : 1;
+                });
+
+                // Alterner l'état actif pour permettre le retour à l'affichage initial
+                const active = d3.select(this).attr("data-active") === "true";
+                d3.select(this).attr("data-active", !active);
+            });
+        });
+    </script>
+
+</body>
+</html>
