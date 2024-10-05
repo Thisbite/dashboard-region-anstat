@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/test.css') }}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    
     <title>Tableau de bord avec D3.js</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
@@ -26,12 +27,13 @@
     <h1>Tableau de bord Kabadougou</h1>
 
    
-    
+    <!-- 5 box pour afficher des vakleurs simples-->
     <div class="container">
         <!-- Slider unique pour sélectionner l'année -->
         <label for="year-slider">Année </label>
         <input type="range" id="year-slider" min="{{min}}" max="{{max}}" step="1" value="2019" />
         <span id="selected-year">2019</span>
+        
         <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 py-5"> 
             <!-- Section pour Effectif de la population -->
             <div class='col'> 
@@ -119,7 +121,7 @@ var color = d3.scaleOrdinal(d3.schemeCategory10);
 // Fonction pour créer les arcs
 var arc = d3.arc()
     .outerRadius(radius - 10)
-    .innerRadius(0);  // Camembert
+    .innerRadius(0.6);  // Camembert
 
 // Fonction pour les arcs des étiquettes
 var arcLabel = d3.arc()
@@ -165,32 +167,20 @@ function updatePauvreteChart(year) {
 
         // Ajouter les étiquettes avec la valeur à l'extérieur du camembert
         g.append("text")
-            .attr("transform", function(d) {
-                var pos = arcLabel.centroid(d);  // Positionner les étiquettes à l'extérieur
-                pos[0] = radius * (d.startAngle + d.endAngle < Math.PI ? 0.8 : -0.8);  // Ajustement gauche/droite
-                return "translate(" + pos + ")";
-            })
-            .attr("dy", "0.35em")
-            .style("text-anchor", function(d) {
-                return (d.startAngle + d.endAngle) < Math.PI ? "start" : "end";  // Alignement des étiquettes
-            })
-            .text(function(d) {
-                return d.data.zone + " (" + d.data.valeur + "%)";  // Affichage de l'étiquette avec la valeur
-            });
+        .attr("transform", function(d) {
+            var pos = arcLabel.centroid(d);  // Utilise le centre de l'arc
+            return "translate(" + pos + ") rotate(-10)"; // Place l'étiquette au centre et la fait pivoter de 45 degrés
+        })
+        .attr("dy", "0.20em")
+        .style("text-anchor", "middle") // Centre l'étiquette
+        .text(function(d) {
+            return d.data.zone + " (" + d.data.valeur + "%)";  // Affichage de l'étiquette avec la valeur
+        });
+
+
 
         // Ajouter des lignes (flèches) pour relier les segments aux étiquettes
-        svgPauvrete.selectAll("polyline")
-            .data(arcs)
-            .enter().append("polyline")
-            .attr("points", function(d) {
-                var posA = arc.centroid(d);  // Position du centre du segment
-                var posB = arcLabel.centroid(d);  // Position de l'étiquette
-                posB[0] = radius * (d.startAngle + d.endAngle < Math.PI ? 0.8 : -0.8);  // Ajustement de la direction
-                return [posA, posB];  // Dessine la ligne du centre au bord du camembert puis vers l'étiquette
-            })
-            .style("fill", "none") // Pas de remplissage pour la ligne
-            .style("stroke", "gray") // Couleur de la ligne
-            .style("stroke-width", "1px");
+        
     });
 }
 
@@ -271,34 +261,21 @@ function updateMortaliteChart(year) {
             .transition()  // Ajout d'une transition douce
             .duration(750);
 
-        // Ajouter les étiquettes avec la valeur à l'extérieur du camembert
-        g.append("text")
+        // Ajouter les étiquettes 
+       
+            g.append("text")
             .attr("transform", function(d) {
-                var pos = arcLabel.centroid(d);  // Positionner les étiquettes à l'extérieur
-                pos[0] = radius * (d.startAngle + d.endAngle < Math.PI ? 0.8 : -0.8);  // Ajustement gauche/droite
-                return "translate(" + pos + ")";
+                var pos = arcLabel.centroid(d);  // Utilise le centre de l'arc
+                return "translate(" + pos + ") rotate(-45)"; // Place l'étiquette au centre et la fait pivoter de 45 degrés
             })
-            .attr("dy", "0.35em")
-            .style("text-anchor", function(d) {
-                return (d.startAngle + d.endAngle) < Math.PI ? "start" : "end";  // Alignement des étiquettes
-            })
+            .attr("dy", "0.20em")
+            .style("text-anchor", "middle") // Centre l'étiquette
             .text(function(d) {
-                return d.data.zone + " (" + d.data.valeur + "‰)";  // Affichage de l'étiquette avec la valeur
+                return d.data.zone + " (" + d.data.valeur + " ‰)";  // Affichage de l'étiquette avec la valeur
             });
 
-        // Ajouter des lignes (flèches) pour relier les segments aux étiquettes
-        svgMortalite.selectAll("polyline")
-            .data(arcs)
-            .enter().append("polyline")
-            .attr("points", function(d) {
-                var posA = arc.centroid(d);  // Position du centre du segment
-                var posB = arcLabel.centroid(d);  // Position de l'étiquette
-                posB[0] = radius * (d.startAngle + d.endAngle < Math.PI ? 0.8 : -0.8);  // Ajustement de la direction
-                return [posA, posB];  // Dessine la ligne du centre au bord du camembert puis vers l'étiquette
-            })
-            .style("fill", "none") // Pas de remplissage pour la ligne
-            .style("stroke", "gray") // Couleur de la ligne
-            .style("stroke-width", "1px");
+
+        
     });
 }
 
@@ -332,22 +309,22 @@ updateMortaliteChart(2019);
 
 
 
-        // Dimensions et marges pour production
-        var margin = {top: 20, right: 30, bottom: 40, left: 40},
-        width = 400 - margin.left - margin.right,
-        height = 300 - margin.top - margin.bottom,
-        radius = Math.min(width, height) / 2;  // Rayon du camembert
-       
-       // Création du SVG pour le camembert
-       var svgProduction = d3.select("#production-chart")
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
-        .append("g")
-        .attr("transform", "translate(" + (width / 2 + margin.left) + "," + (height / 2 + margin.top) + ")");
-       
-       // Échelle des couleurs
-       var color = d3.scaleOrdinal(d3.schemeCategory10);
-       
+// Dimensions et marges pour production
+var margin = {top: 20, right: 30, bottom: 40, left: 40},
+width = 400 - margin.left - margin.right,
+height = 300 - margin.top - margin.bottom,
+radius = Math.min(width, height) / 2;  // Rayon du camembert
+
+// Création du SVG pour le camembert
+var svgProduction = d3.select("#production-chart")
+.attr("width", width + margin.left + margin.right)
+.attr("height", height + margin.top + margin.bottom)
+.append("g")
+.attr("transform", "translate(" + (width / 2 + margin.left) + "," + (height / 2 + margin.top) + ")");
+
+// Échelle des couleurs
+var color = d3.scaleOrdinal(d3.schemeCategory10);
+
       // Fonction pour créer les arcs
 var arc = d3.arc()
 .outerRadius(radius - 10)
@@ -363,6 +340,7 @@ var pie = d3.pie()
 .sort(null)
 .value(function(d) { return d.valeur; });
 
+// Matière premiere
 function updateProductionChart(type, year) {
 d3.json("/data").then(function(data) {
     // Filtrer les données selon l'année et le type
@@ -483,127 +461,172 @@ d3.json("/data").then(function(data) {
            });
        
            if (type === "Effectif de la population") {
-               xPopulation.domain(filteredData.map(function(d) { return d.groupe_age; }));
-               // Définir un domaine Y allant de 0 à 150000
-                    yPopulation.domain([0, 150000]);
-
-                    // Appel de l'axe Y avec des ticks personnalisés
-                    yAxisPopulation.call(d3.axisLeft(yPopulation)
-                        .tickValues([0, 5000, 15000, 50000, 100000, 150000])  // Valeurs personnalisées pour les ticks
-                        .tickFormat(function(d) {
-                            if (d === 0) {
-                                return "0";  // Affichage du tick pour 0
-                            } else if (d === 5000) {
-                                return "5";  // Affichage pour 5000
-                            } else if (d === 15000) {
-                                return "15";  // Affichage pour 15000
-                            } else if (d === 50000) {
-                                return "50";  // Affichage pour 50000
-                            } else if (d === 100000) {
-                                return "100";  // Affichage pour 100000
-                            } else if (d === 150000) {
-                                return "100+";  // Affichage pour 150000 et plus
-                            }
-                        })
-                    );
-
+            xPopulation.domain(filteredData.map(function(d) { return d.groupe_age; }));
+        
+            // Calcul du total pour obtenir les pourcentages
+            var total = d3.sum(filteredData, function(d) { return d.valeur; });
+        
+            // Définir un domaine Y allant de 0 à 150000 (valeurs brutes)
+            yPopulation.domain([0, 150000]);
+        
+            // Appel de l'axe Y avec des ticks
+            yAxisPopulation.call(d3.axisLeft(yPopulation)
+                .tickValues([0, 5000, 15000, 50000, 100000, 150000])
+                .tickFormat(function(d) {
+                    if (d === 0) return "0";
+                    if (d === 5000) return "5";
+                    if (d === 15000) return "15";
+                    if (d === 50000) return "50";
+                    if (d === 100000) return "100";
+                    if (d === 150000) return "100+";
+                })
+            );
+        
+            // Appel de l'axe X
+            xAxisPopulation.call(d3.axisBottom(xPopulation))
+                .selectAll("text")
+                .style("text-anchor", "end")
+                .attr("dx", "-0.8em")
+                .attr("dy", "0.15em")
+                .attr("transform", "rotate(-45)");
+        
+            // Sélection et affichage des barres
+            var bars = gPopulation.selectAll(".bar1").data(filteredData);
+        
+            bars.enter().append("rect")
+                .attr("class", "bar1")
+                .attr("x", function(d) { return xPopulation(d.groupe_age); })
+                .attr("y", function(d) { return yPopulation(d.valeur); })
+                .attr("width", xPopulation.bandwidth() * 0.5)
+                .attr("height", function(d) { return height - yPopulation(d.valeur); })
+                .merge(bars)
+                .transition()
+                .duration(750)
+                .attr("x", function(d) { return xPopulation(d.groupe_age); })
+                .attr("y", function(d) { return yPopulation(d.valeur); })
+                .attr("width", xPopulation.bandwidth() * 0.5)
+                .attr("height", function(d) { return height - yPopulation(d.valeur); });
+        
+            bars.exit().remove();
+        
+            // Ajouter les pourcentages au-dessus de chaque barre
+            var labels = gPopulation.selectAll(".label").data(filteredData);
+        
+            // Ajout du texte des pourcentages pour chaque barre
+            labels.enter().append("text")
+                .attr("class", "label")
+                .attr("x", function(d) { return xPopulation(d.groupe_age) + xPopulation.bandwidth() * 0.25; })  // Centrer le texte dans la barre
+                .attr("y", function(d) { return yPopulation(d.valeur) - 5; })  // Positionner au-dessus de la barre
+                .attr("text-anchor", "middle")
+                .text(function(d) {
+                    var pourcentage = (d.valeur / total * 100).toFixed(2);  // Calculer le pourcentage
+                    return pourcentage + "%";  // Afficher le pourcentage
+                })
+                .merge(labels)  // Fusionner les nouvelles données avec les anciennes
+                .transition()
+                .duration(750)
+                .attr("x", function(d) { return xPopulation(d.groupe_age) + xPopulation.bandwidth() * 0.25; })
+                .attr("y", function(d) { return yPopulation(d.valeur) - 5; })  // Ajuster au-dessus de la barre
+                .text(function(d) {
+                    var pourcentage = (d.valeur / total * 100).toFixed(2);
+                    return pourcentage + "%";
+                });
+        
+            // Supprimer les anciens labels
+            labels.exit().remove();
+        }
+        
+        else if (type === "Taux de scolarisation") {
+            xScolarisation.domain(filteredData.map(function(d) { return d.cycle_scolaire; }));
+            yScolarisation.domain([0, 100]);  // Le domaine Y va de 0 à 100 pour refléter les pourcentages
+        
+            // Appel de l'axe X
+            xAxisScolarisation.call(d3.axisBottom(xScolarisation))
+                .selectAll("text")
+                .style("text-anchor", "end")
+                .attr("dx", "-0.8em")
+                .attr("dy", "0.15em")
+                .attr("transform", "rotate(-30)");
+        
+            // Appel de l'axe Y
+            yAxisScolarisation.call(d3.axisLeft(yScolarisation));
+        
+            // Sélection et affichage des barres
+            var bars = gScolarisation.selectAll(".bar").data(filteredData);
+        
+            bars.enter().append("rect")
+                .attr("class", "bar")
+                .attr("x", function(d) { return xScolarisation(d.cycle_scolaire); })
+                .attr("y", function(d) { return yScolarisation(d.valeur); })
+                .attr("width", xScolarisation.bandwidth() * 0.5)
+                .attr("height", function(d) { return height - yScolarisation(d.valeur); })
+                .merge(bars)
+                .transition()
+                .duration(750)
+                .attr("x", function(d) { return xScolarisation(d.cycle_scolaire); })
+                .attr("y", function(d) { return yScolarisation(d.valeur); })
+                .attr("width", xScolarisation.bandwidth() * 0.5)
+                .attr("height", function(d) { return height - yScolarisation(d.valeur); });
+        
+            bars.exit().remove();
+        
+            // Ajouter les pourcentages au-dessus de chaque barre
+            var labels = gScolarisation.selectAll(".label").data(filteredData);
+        
+            // Ajout du texte des pourcentages pour chaque barre
+            labels.enter().append("text")
+                .attr("class", "label")
+                .attr("x", function(d) { return xScolarisation(d.cycle_scolaire) + xScolarisation.bandwidth() * 0.25; })  // Centrer le texte dans la barre
+                .attr("y", function(d) { return yScolarisation(d.valeur) - 5; })  // Positionner au-dessus de la barre
+                .attr("text-anchor", "middle")
+                .text(function(d) {
+                    return d.valeur + "%";  // Afficher le pourcentage directement
+                })
+                .merge(labels)
+                .transition()
+                .duration(750)
+                .attr("x", function(d) { return xScolarisation(d.cycle_scolaire) + xScolarisation.bandwidth() * 0.25; })
+                .attr("y", function(d) { return yScolarisation(d.valeur) - 5; })  // Ajuster au-dessus de la barre
+                .text(function(d) {
+                    return d.valeur + "%";  // Toujours afficher le pourcentage
+                });
+        
+            labels.exit().remove();
+        }
+        
        
-                    xAxisPopulation.call(d3.axisBottom(xPopulation))
-                    .selectAll("text")  // Sélectionner tous les éléments de texte des ticks
-                    .style("text-anchor", "end")  // Ancrer le texte à la fin pour que la rotation soit propre
-                    .attr("dx", "-0.8em")  // Décalage horizontal
-                    .attr("dy", "0.15em")  // Décalage vertical
-                    .attr("transform", "rotate(-45)");  // Appliquer une rotation de 45 degrés vers la gauche
-                
-       
-               var bars = gPopulation.selectAll(".bar1").data(filteredData);
-               bars.enter().append("rect")
-                   .attr("class", "bar1")
-                   .attr("x", function(d) { return xPopulation(d.groupe_age); })
-                   .attr("y", function(d) { return yPopulation(d.valeur); })
-                   .attr("width", xPopulation.bandwidth()*0.5)
-                   .attr("height", function(d) { return height - yPopulation(d.valeur); })
-                   .merge(bars)
-                   .transition()
-                   .duration(750)
-                   .attr("x", function(d) { return xPopulation(d.groupe_age); })
-                   .attr("y", function(d) { return yPopulation(d.valeur); })
-                   .attr("width", xPopulation.bandwidth()*0.5)
-                   .attr("height", function(d) { return height - yPopulation(d.valeur); });
-                   
-       
-               bars.exit().remove();
-           } else if (type === "Taux de scolarisation") {
-               xScolarisation.domain(filteredData.map(function(d) { return d.cycle_scolaire; }));
-               yScolarisation.domain([0, 100]);
-       
-               
-               xAxisScolarisation.call(d3.axisBottom(xScolarisation))
-                .selectAll("text")  // Sélectionner tous les éléments de texte des ticks
-                .style("text-anchor", "end")  // Ancrer le texte à la fin pour que la rotation soit propre
-                .attr("dx", "-0.8em")  // Décalage horizontal
-                .attr("dy", "0.15em")  // Décalage vertical
-                .attr("transform", "rotate(-30)");  // Appliquer une rotation de 45 degrés vers la gauche
-
-
-
-
-
-
-               yAxisScolarisation.call(d3.axisLeft(yScolarisation));
-       
-               var bars = gScolarisation.selectAll(".bar").data(filteredData);
-               bars.enter().append("rect")
-                   .attr("class", "bar")
-                   .attr("x", function(d) { return xScolarisation(d.cycle_scolaire); })
-                   .attr("y", function(d) { return yScolarisation(d.valeur); })
-                   .attr("width", xScolarisation.bandwidth()*0.5)
-                   .attr("height", function(d) { return height - yScolarisation(d.valeur); })
-                   .merge(bars)
-                   .transition()
-                   .duration(750)
-                   .attr("x", function(d) { return xScolarisation(d.cycle_scolaire); })
-                   .attr("y", function(d) { return yScolarisation(d.valeur); })
-                   .attr("width", xScolarisation.bandwidth()*0.5)
-                   .attr("height", function(d) { return height - yScolarisation(d.valeur); });
-       
-               bars.exit().remove();
-           }
-       
-           else if (type === "Effectif de la population1") { // Correction du nom de l'indicateur
+           else if (type === "Effectif de la population1") {  // Correction du nom de l'indicateur
            // Définir le domaine de l'axe des x
            xPopulationSexe.domain(filteredData.map(function(d) { return d.sexe; }));
            
-           // Correction : la définition du domaine pour l'axe y doit être ici, et pas à la place de xPopulationSexe
-          
+           // Définir le domaine de l'axe des y
            yPopulationSexe.domain([1000000, 8000000]);
-
-// Appel de l'axe Y avec des ticks personnalisés
-yAxisPopulationSexe.call(d3.axisLeft(yPopulationSexe)
-    .tickValues([1000000, 2000000, 3000000, 4000000, 5000000, 8000000])  // Valeurs spécifiques des ticks
-    .tickFormat(function(d) {
-        // Affichage des valeurs avec un format plus compact
-        if (d === 1000000) {
-            return "1M";  // Affichage pour 1 million
-        } else if (d === 2000000) {
-            return "2M";  // Affichage pour 2 millions
-        } else if (d === 3000000) {
-            return "3M";  // Affichage pour 3 millions
-        } else if (d === 4000000) {
-            return "4M";  // Affichage pour 4 millions
-        } else if (d === 5000000) {
-            return "5M";  // Affichage pour 5 millions
-        } else if (d === 8000000) {
-            return "6M+";  // Affichage pour 6 millions et plus
-        }
-    })
-);
-
-
        
-           // Mettre à jour les axes
+           // Calculer le total des valeurs pour obtenir les pourcentages
+           var total = d3.sum(filteredData, function(d) { return d.valeur; });
+       
+           // Appel de l'axe Y avec des ticks personnalisés
+           yAxisPopulationSexe.call(d3.axisLeft(yPopulationSexe)
+               .tickValues([1000000, 2000000, 3000000, 4000000, 5000000, 8000000])  // Valeurs spécifiques des ticks
+               .tickFormat(function(d) {
+                   if (d === 1000000) {
+                       return "1M";  // Affichage pour 1 million
+                   } else if (d === 2000000) {
+                       return "2M";  // Affichage pour 2 millions
+                   } else if (d === 3000000) {
+                       return "3M";  // Affichage pour 3 millions
+                   } else if (d === 4000000) {
+                       return "4M";  // Affichage pour 4 millions
+                   } else if (d === 5000000) {
+                       return "5M";  // Affichage pour 5 millions
+                   } else if (d === 8000000) {
+                       return "6M+";  // Affichage pour 6 millions et plus
+                   }
+               })
+           );
+       
+           // Appel de l'axe X
            xAxisPopulationSexe.call(d3.axisBottom(xPopulationSexe));
-       
        
            // Sélection des barres
            var bars = gPopulationSexe.selectAll(".bar").data(filteredData);
@@ -613,19 +636,45 @@ yAxisPopulationSexe.call(d3.axisLeft(yPopulationSexe)
                .attr("class", "bar")
                .attr("x", function(d) { return xPopulationSexe(d.sexe); })
                .attr("y", function(d) { return yPopulationSexe(d.valeur); })
-               .attr("width", xPopulationSexe.bandwidth()*0.5)
+               .attr("width", xPopulationSexe.bandwidth() * 0.5)
                .attr("height", function(d) { return height - yPopulationSexe(d.valeur); })
                .merge(bars)
                .transition()
-               .duration(750)  
+               .duration(750)
                .attr("x", function(d) { return xPopulationSexe(d.sexe); })
                .attr("y", function(d) { return yPopulationSexe(d.valeur); })
-               .attr("width", xPopulationSexe.bandwidth()*0.5)
+               .attr("width", xPopulationSexe.bandwidth() * 0.5)
                .attr("height", function(d) { return height - yPopulationSexe(d.valeur); });
        
            // Supprimer les barres qui ne sont plus nécessaires
            bars.exit().remove();
+       
+           // Ajouter les pourcentages au-dessus de chaque barre
+           var labels = gPopulationSexe.selectAll(".label").data(filteredData);
+       
+           labels.enter().append("text")
+               .attr("class", "label")
+               .attr("x", function(d) { return xPopulationSexe(d.sexe) + xPopulationSexe.bandwidth() * 0.25; })  // Centrer le texte dans la barre
+               .attr("y", function(d) { return yPopulationSexe(d.valeur) - 5; })  // Positionner au-dessus de la barre
+               .attr("text-anchor", "middle")
+               .text(function(d) {
+                   var percentage = ((d.valeur / total) * 100).toFixed(2);  // Calcul du pourcentage
+                   return percentage + "%";  // Afficher le pourcentage
+               })
+               .merge(labels)
+               .transition()
+               .duration(750)
+               .attr("x", function(d) { return xPopulationSexe(d.sexe) + xPopulationSexe.bandwidth() * 0.25; })
+               .attr("y", function(d) { return yPopulationSexe(d.valeur) - 5; })  // Ajuster au-dessus de la barre
+               .text(function(d) {
+                   var percentage = ((d.valeur / total) * 100).toFixed(2);  // Calcul du pourcentage
+                   return percentage + "%";  // Afficher le pourcentage
+               });
+       
+           labels.exit().remove();
        }
+       
+       
        
        });
        }
@@ -652,6 +701,20 @@ yAxisPopulationSexe.call(d3.axisLeft(yPopulationSexe)
        updateProductionChart("Production",{{min}});
        
        
+
+
+       function toggleText(button) {
+        var text = button.previousElementSibling; // Accède à l'élément <p>
+        if (text.style.overflow === "hidden") {
+            text.style.overflow = "visible"; // Affiche tout le texte
+            text.style.maxHeight = "none"; // Enlève la limite de hauteur
+            button.textContent = "Réduire"; // Change le texte du bouton
+        } else {
+            text.style.overflow = "hidden"; // Masque le texte
+            text.style.maxHeight = "100px"; // Réapplique la limite de hauteur
+            button.textContent = "Lire la suite"; // Rétablit le texte du bouton
+        }
+    }
            </script>
 </body>
 </html>

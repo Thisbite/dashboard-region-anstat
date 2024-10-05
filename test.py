@@ -37,18 +37,17 @@ def get_data():
             
     # Générer les données pour l'indicateur "Effectif de la population"
     sexes = ['M', 'F']
-    groupes_age = ['0-4', '5-9', '10-14', '15-19', '20-24']
+    groupes_age = ['0-4', '5-9', '10-14', '15-19', '20-24','25-29','30-34','35-39','40-44','45-49']
 
     for annee in annees:
-        for sexe in sexes:
-            for groupe in groupes_age:
-                data.append({
-                    'indicateur': 'Effectif de la population',
-                    'annee': annee,
-                    'sexe': sexe,
-                    'groupe_age': groupe,
-                    'valeur': random.randint(50000, 150000)  # Génération aléatoire d'effectif
-                })
+        for groupe in groupes_age:
+            data.append({
+                'indicateur': 'Effectif de la population',
+                'annee': annee,
+              
+                'groupe_age': groupe,
+                'valeur': random.randint(50000, 150000)  # Génération aléatoire d'effectif
+            })
     
     # Générer les données pour un autre indicateur "Effectif de la population 1"
     for annee in annees:
@@ -91,12 +90,12 @@ def get_data():
     cycles_scolaires = ['préscolaire', 'primaire', 'secondaire 1er cycle', 'secondaire 2ème cycle']
 
     for annee in annees:
-        for sexe in sexes:
+    
             for cycle in cycles_scolaires:
                 data.append({
                     'indicateur': 'Taux de scolarisation',
                     'annee': annee,
-                    'sexe': sexe,
+                   
                     'cycle_scolaire': cycle,
                     'valeur': round(random.uniform(60, 100), 2)  # Taux entre 60% et 100%
                 })
