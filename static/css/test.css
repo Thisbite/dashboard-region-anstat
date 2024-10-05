@@ -1,3 +1,39 @@
+
+.box h5 {
+    font-size: 24px;
+    font-weight: bold;
+    color: #007bff;
+    margin-bottom: 5px;
+}
+
+.frame {
+    border: 2px solid #e0e5ea; /* Couleur de la bordure */
+    border-radius: 8px; /* Coins arrondis */
+    padding: 20px; /* Espacement intérieur */
+    margin-top: 20px; /* Espacement au-dessus */
+}
+
+.box {
+    background-color: #f8f9fa; /* Couleur de fond de la boîte */
+    border: 1px solid #ced4da; /* Bordure de la boîte */
+    border-radius: 5px; /* Coins arrondis de la boîte */
+    padding: 15px; /* Espacement intérieur de la boîte */
+    text-align: center; /* Centrer le contenu */
+    height: 100px; /* Hauteur fixe pour les boîtes */
+}
+.container-box {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 20px;
+    border-radius: 10px;
+    border: 5px solid rgb(234, 144, 84); /* Ajoute une bordure épaisse et verte */
+}
+
+
+
+
+
 .container {
     display: flex;
     justify-content: space-between;
@@ -71,12 +107,28 @@
 
 
 /* Styles pour le titre */
+/* Style pour le titre principal */
 h1 {
-    text-align: center; /* Centre le titre */
-    font-size: 2em; /* Taille du titre */
-    color: #004085; /* Couleur bleue */
-    margin-bottom: 20px; /* Marge en bas du titre */
+    font-size: 3rem; /* Taille du texte */
+    font-weight: bold; /* Texte en gras */
+    color: #4caf50; /* Couleur principale (vert) */
+    text-align: center; /* Centrer le titre */
+    margin-top: 20px; /* Espacement au-dessus */
+    letter-spacing: 2px; /* Espacement entre les lettres pour un effet plus stylé */
+    text-transform: uppercase; /* Mettre le texte en majuscules */
+    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3); /* Ombre portée pour ajouter du relief */
+    background: linear-gradient(90deg, #4caf50, #81c784); /* Dégradé de couleurs */
+    -webkit-background-clip: text;
+    color: transparent;
+    margin-bottom: 40px; /* Espacement en dessous */
 }
+
+/* Ajouter une animation pour rendre le titre dynamique */
+h1:hover {
+    color: #388e3c; /* Changer la couleur au survol */
+    transition: color 0.3s ease-in-out;
+}
+
 
 /* Styles pour la section du slider */
 .slider-container {
@@ -86,48 +138,82 @@ h1 {
     margin: 20px; /* Marge autour de la section */
 }
 
-/* Styles pour le label */
-label {
-    font-size: 1.2em; /* Taille du texte du label */
-    margin-bottom: 10px; /* Marge en bas du label */
+/* Style pour le label */
+label[for="year-slider"] {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #333;
+    margin-right: 10px;
+    letter-spacing: 0.5px;
 }
 
-/* Styles pour l'input range */
+/* Style pour le slider */
 input[type="range"] {
-    /* Supprime le style par défaut de la barre */
-    width: 100%; /* Prend toute la largeur de son conteneur */
-    height: 8px; /* Hauteur de la barre */
-    background: #ddd; /* Couleur de fond de la barre */
-    border-radius: 5px; /* Bords arrondis de la barre */
-    outline: none; /* Supprime le contour lors de la sélection */
-    margin-bottom: 10px; /* Marge en bas du slider */
+    -webkit-appearance: none;
+    width: 100%;
+    height: 8px;
+    border-radius: 5px;
+    background: linear-gradient(90deg, #4caf50 0%, #8bc34a 100%);
+    outline: none;
+    opacity: 0.9;
+    transition: opacity 0.2s ease;
 }
 
-/* Styles pour le span qui affiche l'année sélectionnée */
-#selected-year {
-    font-size: 1.5em; /* Taille du texte de l'année sélectionnée */
-    color: #004085; /* Couleur bleue */
-    margin-top: 10px; /* Marge en haut */
+input[type="range"]:hover {
+    opacity: 1;
 }
 
-/* Styles pour les valeurs du slider */
 input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none; /* Supprime le style par défaut du pouce */
-    appearance: none; /* Supprime le style par défaut du pouce */
-    width: 20px; /* Largeur du pouce */
-    height: 20px; /* Hauteur du pouce */
-    border-radius: 50%; /* Rend le pouce circulaire */
-    background: orange; /* Couleur du pouce */
-    cursor: pointer; /* Change le curseur lors du survol */
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid #4caf50;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+input[type="range"]:active::-webkit-slider-thumb {
+    background-color: #8bc34a;
 }
 
 input[type="range"]::-moz-range-thumb {
-    width: 20px; /* Largeur du pouce */
-    height: 20px; /* Hauteur du pouce */
-    border-radius: 50%; /* Rend le pouce circulaire */
-    background: orange; /* Couleur du pouce */
-    cursor: pointer; /* Change le curseur lors du survol */
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid #4caf50;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
 }
+
+input[type="range"]:active::-moz-range-thumb {
+    background-color: #8bc34a;
+}
+
+/* Style pour l'année sélectionnée */
+#selected-year {
+    display: inline-block;
+    font-size: 1.4rem;
+    font-weight: bold;
+    color: #4caf50;
+    padding: 5px 10px;
+    background-color: #f4f4f4;
+    border-radius: 8px;
+    margin-left: 15px;
+    text-align: center;
+  
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+#selected-year:hover {
+    background-color: #4caf50;
+    color: white;
+}
+
 
 
 /* Pour les graphes*/
@@ -160,7 +246,7 @@ input[type="range"]::-moz-range-thumb {
 
 text {
     font-family: sans-serif;
-    font-size: 12px;
+    font-size: 10px;
 }
 .arc path {
     stroke: #fff;

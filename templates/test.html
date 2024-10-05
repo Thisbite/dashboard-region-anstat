@@ -33,6 +33,68 @@
         <label for="year-slider">Année </label>
         <input type="range" id="year-slider" min="{{min}}" max="{{max}}" step="1" value="2019" />
         <span id="selected-year">2019</span>
+
+        <div class="container-box mt-3">
+            <div class="frame">
+                <div class="row">
+                    <!-- Boîte 1 -->
+                    <div class="col-md-2">
+                        <div class="box">
+                            <h5 id="esperanceVie-value"><strong>{{ valeur_esperanceVie }}</strong></h5>
+                           <p>Espérance de vie à la naissance<span id="esperanceVie-year"></span></p>
+                        </div>
+                    </div>
+    
+                    <!-- Ratio élève primaire -->
+                    <div class="col-md-2">
+                        <div class="box">
+                            <h5><strong id="ratioElevePrimaire-value">{{ data_ratio_eleve_primaire[0]['valeur'] }}</strong></h5>
+                            <p>Ratio élève par salle primaire</p>
+                        </div>
+                    </div>
+
+                    <!-- Boîte 3 -->
+                    <!-- Affichage du nombre de commerçants -->
+                    <div class="col-md-2">
+                        <div class="box">
+                            <h5 id="commercant-value"><strong>{{ valeur_commercant }}</strong></h5>
+                            <p>Nombre de commerçants <span id="commercant-year"></span></p>
+                        </div>
+                    </div>
+                    <!-- Boîte 4 -->
+                    <div class="col-md-2">
+                        <div class="box">
+                            <h5>4</h5>
+                            <p>Départements </p>
+                        </div>
+                    </div>
+
+                     <!-- Boîte 5 -->
+                     <div class="col-md-2">
+                        <div class="box">
+                            <h5>16</h5>
+                            <p>Sous-préfectures</p>
+                        </div>
+                    </div>
+                 
+    
+    
+    
+                    <!-- Boîte 7 -->
+                    <div class="col-md-2">
+                        <div class="box">
+                            <h5>3</h5>
+                            <p>Mairies</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+        <!-- Lien vers Bootstrap JS et jQuery -->
+        <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.1/dist/umd/popper.min.js"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
         
         <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 py-5"> 
             <!-- Section pour Effectif de la population -->
@@ -100,6 +162,81 @@
     </div> <!-- Fin de .row -->
     </div> <!-- Fin de .container -->
     <script>
+
+/**************************************************************************************/
+// Données des commerçants et espérance de vie en fonction de l'année (les données que tu passes à Flask)
+var data_commercants = {{ data_commercants | tojson }};  // Données pour les commerçants
+var data_esperance_vie = {{ data_esperance_vie | tojson }};  // Données pour l'espérance de vie
+
+
+// Sélectionner les éléments du DOM pour les commerçants
+var yearSlider = document.getElementById('year-slider');
+var selectedYearText = document.getElementById('selected-year');
+var commercantValueText = document.getElementById('commercant-value');
+var commercantYearText = document.getElementById('commercant-year');
+
+// Sélectionner les éléments du DOM pour l'espérance de vie
+var esperanceVieValueText = document.getElementById('esperanceVie-value');
+var esperanceVieYearText = document.getElementById('esperanceVie-year');
+
+// Mettre à jour l'affichage lorsqu'on change l'année
+yearSlider.addEventListener('input', function() {
+    var selectedYear = yearSlider.value;  // Récupérer l'année sélectionnée
+    selectedYearText.textContent = selectedYear;  // Mettre à jour le texte affichant l'année
+    
+
+    // Chercher la valeur des commerçants pour l'année sélectionnée
+    var commercantData = data_commercants.find(function(item) {
+        return item.annee == selectedYear;
+    });
+
+    // Chercher la valeur de l'espérance de vie pour l'année sélectionnée
+    var esperanceVieData = data_esperance_vie.find(function(item) {
+        return item.annee == selectedYear;
+    });
+
+    // Mettre à jour la valeur des commerçants
+    if (commercantData) {
+        commercantValueText.textContent = commercantData.valeur;
+    } else {
+        commercantValueText.textContent = 'N/A';
+    }
+
+    // Mettre à jour la valeur de l'espérance de vie
+    if (esperanceVieData) {
+        esperanceVieValueText.textContent = esperanceVieData.valeur + ' ans';
+    } else {
+        esperanceVieValueText.textContent = 'N/A';
+    }
+});
+
+
+// Données pour le ratio élève par salle primaire
+var data_ratio_eleve_primaire = {{ data_ratio_eleve_primaire | tojson }};
+
+// Sélectionner l'élément du DOM pour le ratio élève primaire
+var ratioElevePrimaireValueText = document.getElementById('ratioElevePrimaire-value');
+
+// Mettre à jour l'affichage lorsqu'on change l'année
+yearSlider.addEventListener('input', function() {
+    var selectedYear = yearSlider.value;  // Récupérer l'année sélectionnée
+    selectedYearText.textContent = selectedYear;  // Mettre à jour le texte affichant l'année
+
+    // Chercher la valeur du ratio élève pour l'année sélectionnée
+    var ratioElevePrimaireData = data_ratio_eleve_primaire.find(function(item) {
+        return item.annee == selectedYear;
+    });
+
+    if (ratioElevePrimaireData) {
+        ratioElevePrimaireValueText.textContent = ratioElevePrimaireData.valeur;
+    } else {
+        ratioElevePrimaireValueText.textContent = 'N/A';
+    }
+});
+
+
+//***************************************************************************************************************************************/
+
 
 //Pauvrété
 // Dimensions et marges pour le taux de pauvreté
@@ -511,13 +648,15 @@ d3.json("/data").then(function(data) {
         
             // Ajouter les pourcentages au-dessus de chaque barre
             var labels = gPopulation.selectAll(".label").data(filteredData);
-        
-            // Ajout du texte des pourcentages pour chaque barre
-            labels.enter().append("text")
+           // Ajout du texte des pourcentages pour chaque barre
+                labels.enter().append("text")
                 .attr("class", "label")
                 .attr("x", function(d) { return xPopulation(d.groupe_age) + xPopulation.bandwidth() * 0.25; })  // Centrer le texte dans la barre
                 .attr("y", function(d) { return yPopulation(d.valeur) - 5; })  // Positionner au-dessus de la barre
                 .attr("text-anchor", "middle")
+                .attr("transform", function(d) {
+                    return `rotate(-90, ${xPopulation(d.groupe_age) + xPopulation.bandwidth() * 0.25}, ${yPopulation(d.valeur) - 5})`;  // Rotation à 90°
+                })
                 .text(function(d) {
                     var pourcentage = (d.valeur / total * 100).toFixed(2);  // Calculer le pourcentage
                     return pourcentage + "%";  // Afficher le pourcentage
@@ -527,10 +666,14 @@ d3.json("/data").then(function(data) {
                 .duration(750)
                 .attr("x", function(d) { return xPopulation(d.groupe_age) + xPopulation.bandwidth() * 0.25; })
                 .attr("y", function(d) { return yPopulation(d.valeur) - 5; })  // Ajuster au-dessus de la barre
+                .attr("transform", function(d) {
+                    return `rotate(-90, ${xPopulation(d.groupe_age) + xPopulation.bandwidth() * 0.25}, ${yPopulation(d.valeur) - 5})`;  // Appliquer la rotation
+                })
                 .text(function(d) {
                     var pourcentage = (d.valeur / total * 100).toFixed(2);
                     return pourcentage + "%";
                 });
+
         
             // Supprimer les anciens labels
             labels.exit().remove();
