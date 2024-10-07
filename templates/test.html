@@ -8,21 +8,7 @@
     
     <title>Tableau de bord avec D3.js</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
-    <style>
-        /* Assure-toi que les SVG remplissent complètement leur conteneur */
-        svg {
-            width: 100%;
-            height: 100%;
-        }
 
-        /* Assure-toi que les cartes ont une taille fixe ou maximum */
-        .card {
-          
-            height: 400px; /* Hauteur fixe pour les cartes */
-        }
-        
-    </style>
-    
 </head>
 <body>
     <h1>Tableau de bord Kabadougou</h1>
@@ -96,8 +82,9 @@
         <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.1/dist/umd/popper.min.js"></script>
         <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-        
-        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 py-5"> 
+
+        <div class="container-bloc-graph">
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 py-5" > 
             <!-- Section pour Effectif de la population -->
             <div class='col'> 
                 <div class="card" >
@@ -143,6 +130,8 @@
         <div class='col'> 
             <div class="card">
                 <div class="frame frame-orange">
+                    <div id="tooltip" style="position: absolute; opacity: 0; background: #fff; border: 1px solid #ccc; padding: 5px; border-radius: 5px; pointer-events: none;"></div>
+
                     <div class="graph-title">Taux de pauvrété</div>
                     <svg id="taux-pauvrete-chart" width="100%" height="400"></svg>
                 </div>
@@ -161,6 +150,8 @@
         </div>
 
     </div> <!-- Fin de .row -->
+  </div> <!-- Bloc affichage de données-->
+
     </div> <!-- Fin de .container -->
     <script>
 
@@ -262,6 +253,10 @@ var pie = d3.pie()
     .sort(null)
     .value(function(d) { return d.valeur; });
 
+// Sélection du tooltip
+// Sélection du tooltip
+var tooltip = d3.select("#tooltip");
+
 function updatePauvreteChart(year) {
     d3.json("/data").then(function(data) {
         // Filtrer les données pour le taux de pauvreté par zone et année
@@ -286,13 +281,25 @@ function updatePauvreteChart(year) {
             .data(arcs)
             .enter()
             .append("g");
-           
-           
 
         // Dessiner les sections de l'anneau
         g.append("path")
             .attr("d", arc)
             .attr("fill", function(d) { return color(d.data.zone); })
+            .on("mouseover", function(event, d) {
+                // Rendre le tooltip visible et afficher les informations
+                tooltip.style("opacity", 1)
+                       .html("Zone: " + d.data.zone + "<br>Valeur: " + d.data.valeur + "%");
+            })
+            .on("mousemove", function(event) {
+                // Ajuster la position du tooltip avec la souris
+                tooltip.style("left", (event.pageX + 10) + "px")
+                       .style("top", (event.pageY - 10) + "px");
+            })
+            .on("mouseout", function() {
+                // Cacher le tooltip lorsqu'on sort de la section
+                tooltip.style("opacity", 0);
+            })
             .transition()
             .duration(750)
             .attrTween("d", function(d) {
@@ -318,7 +325,6 @@ function updatePauvreteChart(year) {
             .attr("y1", function(d) { return arc.centroid(d)[1]; })
             .attr("x2", function(d) { return arcLabel.centroid(d)[0]; })
             .attr("y2", function(d) { return arcLabel.centroid(d)[1]; });
-           
     });
 }
 
@@ -660,6 +666,7 @@ function updateProductionChart(type, year) {
                         .attr("dx", "-0.8em")
                         .attr("dy", "0.15em")
                         .attr("transform", "rotate(-30)");
+                    
                 
                     // Appel de l'axe Y
                     yAxisScolarisation.call(d3.axisLeft(yScolarisation));

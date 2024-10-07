@@ -1,4 +1,23 @@
 
+body{
+    background-color:rgba(39, 73, 186, 0.8);
+    margin: 0%;
+}
+
+     /* Assure-toi que les SVG remplissent complètement leur conteneur */
+     svg {
+        width: 100%;
+        height: 100%;
+    }
+
+    /* Assure-toi que les cartes ont une taille fixe ou maximum */
+    .card {
+      
+        height: 400px; /* Hauteur fixe pour les cartes */
+    }
+    
+
+  
 .box h5 {
     font-size: 24px;
     font-weight: bold;
@@ -15,23 +34,52 @@
 
 .box {
     background-color: #f8f9fa; /* Couleur de fond de la boîte */
-    border: 1px solid #ced4da; /* Bordure de la boîte */
-    border-radius: 5px; /* Coins arrondis de la boîte */
+    /* Bordure de la boîte */
+    border-radius: 15px; /* Coins arrondis de la boîte */
     padding: 15px; /* Espacement intérieur de la boîte */
     text-align: center; /* Centrer le contenu */
     height: 100px; /* Hauteur fixe pour les boîtes */
+    -webkit-box-shadow: -16px 10px 5px 0px rgba(0,0,0,0.75);
+    -moz-box-shadow: -16px 10px 5px 0px rgba(0,0,0,0.75);
+    box-shadow: -16px 10px 5px 0px rgba(240, 238, 238, 0.75);
+    border-radius: 110px 110px 110px 110px;
+-moz-border-radius: 110px 110px 110px 110px;
+-webkit-border-radius: 110px 110px 110px 110px;
+border: 0px solid #000000;
 }
 .container-box {
     display: flex;
     justify-content: space-between;
     flex-wrap: wrap;
     gap: 20px;
-    border-radius: 10px;
-    border: 5px solid rgb(234, 144, 84); /* Ajoute une bordure épaisse et verte */
+    border-radius: 110px 110px 110px 110px;
+    -moz-border-radius: 110px 110px 110px 110px;
+    -webkit-border-radius: 110px 110px 110px 110px;
+    border: 0px solid #000000;
+    position:center;
+ 
 }
 
 
 
+/* Assurez-vous que le parent de .container-box utilise Flexbox pour centrer */
+.parent-container {
+    display: flex;
+    justify-content: center;  /* Centrage horizontal */
+    align-items: center;      /* Centrage vertical */
+    height: 100vh;            /* Optionnel : Prend la hauteur de la fenêtre */
+}
+
+/* Styles pour votre conteneur */
+.container-box {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 20px;
+    border-radius: 110px;
+    border: 0px solid #000000;
+    /* Supprimez 'position: center;', car ce n'est pas une propriété CSS valide */
+}
 
 
 .container {
@@ -40,7 +88,8 @@
     flex-wrap: wrap;
     gap: 20px;
     border-radius: 10px;
-    border: 5px solid green; /* Ajoute une bordure épaisse et verte */
+
+/* Ajoute une bordure épaisse et verte */
 }
 
 .card-img-top {
@@ -53,14 +102,22 @@
 
 .card {
     position: relative;
-    border-radius: 30px;
+
     box-shadow: rgba(50, 50, 93, 0.25) 0px 30px 60px -12px, rgba(0, 0, 0, 0.3) 0px 18px 36px -18px;
     overflow: hidden; /* Assure que le débordement est caché */
+    border-radius: 110px 110px 110px 110px;
+-moz-border-radius: 110px 110px 110px 110px;
+-webkit-border-radius: 110px 110px 110px 110px;
+border: 0px solid #000000;
 }
 
 .card-body {
     padding: 20px; /* Réduit le padding */
     margin-top: 0; /* Supprime ou ajuste la marge si nécessaire */
+    border-radius: 110px 110px 110px 110px;
+-moz-border-radius: 110px 110px 110px 110px;
+-webkit-border-radius: 110px 110px 110px 110px;
+border: 0px solid #000000;
 }
 
 .card-body p {
@@ -72,6 +129,11 @@
 .card .frame {
     border: 5px solid transparent;
     padding: 10px;
+    border-radius: 110px 110px 110px 110px;
+-moz-border-radius: 110px 110px 110px 110px;
+-webkit-border-radius: 110px 110px 110px 110px;
+border: 0px solid #000000;
+    
 }
 
 
@@ -87,6 +149,10 @@
 .card .frame {
     border: 5px solid transparent;
     padding: 10px;
+    border-radius: 110px 110px 110px 110px;
+-moz-border-radius: 110px 110px 110px 110px;
+-webkit-border-radius: 110px 110px 110px 110px;
+border: 0px solid #000000;
 }
 
 .frame-orange {
@@ -219,6 +285,7 @@ input[type="range"]:active::-moz-range-thumb {
 /* Pour les graphes*/
 .bar1 {
     fill: skyblue; /* Remplace steelblue par skyblue */
+    
 }
 .bar:hover {
     fill: orange;
@@ -226,7 +293,7 @@ input[type="range"]:active::-moz-range-thumb {
 .axis path,
 .axis line {
     fill: none;
-    stroke: black;
+    stroke: rgb(170, 17, 17);
     shape-rendering: crispEdges;
 }
 .bar {
@@ -250,4 +317,15 @@ text {
 }
 .arc path {
     stroke: #fff;
+}
+
+/*
+Afficher les valeurs du graphe quand on survole
+
+*/
+.tooltip {
+    font-size: 12px;
+    line-height: 1.5;
+    color: #333;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }

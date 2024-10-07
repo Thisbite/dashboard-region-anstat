@@ -53,9 +53,56 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
+
+#Bloc de conception de dashoard 
+
 @app.route('/page')
 def index():
-    return render_template('index.html')
+    return render_template('rindex.html')
+
+
+@app.route('/dashboard')
+def dashboard():
+    return render_template('pages/dashboard.html')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 @app.route('/statistiques')
