@@ -20,6 +20,7 @@
           
             height: 400px; /* Hauteur fixe pour les cartes */
         }
+        
     </style>
     
 </head>
@@ -167,17 +168,16 @@
 // Données des commerçants et espérance de vie en fonction de l'année (les données que tu passes à Flask)
 var data_commercants = {{ data_commercants | tojson }};  // Données pour les commerçants
 var data_esperance_vie = {{ data_esperance_vie | tojson }};  // Données pour l'espérance de vie
+ var data_ratio_eleve_primaire = {{ data_ratio_eleve_primaire | tojson }}; // Données pour le ratio élève par salle primaire
 
-
-// Sélectionner les éléments du DOM pour les commerçants
 var yearSlider = document.getElementById('year-slider');
 var selectedYearText = document.getElementById('selected-year');
 var commercantValueText = document.getElementById('commercant-value');
-var commercantYearText = document.getElementById('commercant-year');
-
-// Sélectionner les éléments du DOM pour l'espérance de vie
 var esperanceVieValueText = document.getElementById('esperanceVie-value');
-var esperanceVieYearText = document.getElementById('esperanceVie-year');
+var ratioElevePrimaireValueText = document.getElementById('ratioElevePrimaire-value');
+
+
+
 
 // Mettre à jour l'affichage lorsqu'on change l'année
 yearSlider.addEventListener('input', function() {
@@ -195,6 +195,9 @@ yearSlider.addEventListener('input', function() {
         return item.annee == selectedYear;
     });
 
+    var ratioElevePrimaireData = data_ratio_eleve_primaire.find(function(item) {
+        return item.annee == selectedYear;
+    });
     // Mettre à jour la valeur des commerçants
     if (commercantData) {
         commercantValueText.textContent = commercantData.valeur;
@@ -208,24 +211,6 @@ yearSlider.addEventListener('input', function() {
     } else {
         esperanceVieValueText.textContent = 'N/A';
     }
-});
-
-
-// Données pour le ratio élève par salle primaire
-var data_ratio_eleve_primaire = {{ data_ratio_eleve_primaire | tojson }};
-
-// Sélectionner l'élément du DOM pour le ratio élève primaire
-var ratioElevePrimaireValueText = document.getElementById('ratioElevePrimaire-value');
-
-// Mettre à jour l'affichage lorsqu'on change l'année
-yearSlider.addEventListener('input', function() {
-    var selectedYear = yearSlider.value;  // Récupérer l'année sélectionnée
-    selectedYearText.textContent = selectedYear;  // Mettre à jour le texte affichant l'année
-
-    // Chercher la valeur du ratio élève pour l'année sélectionnée
-    var ratioElevePrimaireData = data_ratio_eleve_primaire.find(function(item) {
-        return item.annee == selectedYear;
-    });
 
     if (ratioElevePrimaireData) {
         ratioElevePrimaireValueText.textContent = ratioElevePrimaireData.valeur;
@@ -233,6 +218,10 @@ yearSlider.addEventListener('input', function() {
         ratioElevePrimaireValueText.textContent = 'N/A';
     }
 });
+
+
+
+
 
 
 //***************************************************************************************************************************************/
@@ -243,27 +232,30 @@ yearSlider.addEventListener('input', function() {
 var margin = { top: 20, right: 30, bottom: 40, left: 40 },
     width = 400 - margin.left - margin.right,
     height = 300 - margin.top - margin.bottom,
-    radius = Math.min(width, height) / 2;  // Rayon du camembert
+    radius = Math.min(width, height) / 2;  // Rayon de l'anneau
 
-// Création du SVG pour le taux de pauvreté
+
+// Création du SVG pour le diagramme en anneau avec viewBox pour la réactivité
 var svgPauvrete = d3.select("#taux-pauvrete-chart")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom)
+    .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
+    .attr("preserveAspectRatio", "xMidYMid meet")  // Conserve le ratio aspect et centre le graphique
     .append("g")
     .attr("transform", "translate(" + (width / 2 + margin.left) + "," + (height / 2 + margin.top) + ")");
 
 // Échelle des couleurs
 var color = d3.scaleOrdinal(d3.schemeCategory10);
 
-// Fonction pour créer les arcs
+// Fonction pour créer les arcs (diagramme en anneau)
 var arc = d3.arc()
-    .outerRadius(radius - 10)
-    .innerRadius(0.6);  // Camembert
+    .outerRadius(radius )  // Rayon extérieur
+    .innerRadius(radius * 0.5);  // Rayon intérieur pour créer l'anneau
 
 // Fonction pour les arcs des étiquettes
 var arcLabel = d3.arc()
-    .outerRadius(radius + 20)  // Éloigne les étiquettes du bord du camembert
-    .innerRadius(radius + 20);
+    .outerRadius(radius )  // Position des étiquettes en dehors de l'anneau
+    .innerRadius(radius * 0.5);  // Rayon égal pour centrer les étiquettes
 
 // Fonction pie pour calculer les angles
 var pie = d3.pie()
@@ -289,35 +281,44 @@ function updatePauvreteChart(year) {
         // Nettoyer le graphique avant de redessiner
         svgPauvrete.selectAll("*").remove();
 
-        // Créer des groupes pour chaque section du camembert
+        // Créer des groupes pour chaque section de l'anneau
         var g = svgPauvrete.selectAll(".arc")
             .data(arcs)
-            .enter().append("g")
-            .attr("class", "arc");
+            .enter()
+            .append("g");
+           
+           
 
-        // Dessiner les sections du camembert
+        // Dessiner les sections de l'anneau
         g.append("path")
             .attr("d", arc)
-            .attr("fill", function(d) { return color(d.data.zone); }) // Utiliser la zone comme clé de couleur
-            .transition()  // Ajout d'une transition douce
-            .duration(750);
+            .attr("fill", function(d) { return color(d.data.zone); })
+            .transition()
+            .duration(750)
+            .attrTween("d", function(d) {
+                var i = d3.interpolate({ startAngle: 0, endAngle: 0 }, d);
+                return function(t) { return arc(i(t)); };
+            });
 
-        // Ajouter les étiquettes avec la valeur à l'extérieur du camembert
+        // Ajouter les étiquettes avec la valeur à l'extérieur de l'anneau
         g.append("text")
-        .attr("transform", function(d) {
-            var pos = arcLabel.centroid(d);  // Utilise le centre de l'arc
-            return "translate(" + pos + ") rotate(-10)"; // Place l'étiquette au centre et la fait pivoter de 45 degrés
-        })
-        .attr("dy", "0.20em")
-        .style("text-anchor", "middle") // Centre l'étiquette
-        .text(function(d) {
-            return d.data.zone + " (" + d.data.valeur + "%)";  // Affichage de l'étiquette avec la valeur
-        });
+            .attr("transform", function(d) {
+                var pos = arcLabel.centroid(d);
+                return "translate(" + pos + ")";
+            })
+            .attr("dy", "0.35em")
+            .style("text-anchor", "middle")
+            .text(function(d) {
+                return d.data.zone + " (" + d.data.valeur + "%)";
+            });
 
-
-
-        // Ajouter des lignes (flèches) pour relier les segments aux étiquettes
-        
+        // Ajouter des lignes entre les sections et les étiquettes
+        g.append("line")
+            .attr("x1", function(d) { return arc.centroid(d)[0]; })
+            .attr("y1", function(d) { return arc.centroid(d)[1]; })
+            .attr("x2", function(d) { return arcLabel.centroid(d)[0]; })
+            .attr("y2", function(d) { return arcLabel.centroid(d)[1]; });
+           
     });
 }
 
@@ -334,12 +335,8 @@ updatePauvreteChart(2019);
 
 
 
-//Mortatlité
-// Dimensions et marges pour le taux de mortalité
-var margin = { top: 20, right: 30, bottom: 40, left: 40 },
-    width = 400 - margin.left - margin.right,
-    height = 300 - margin.top - margin.bottom,
-    radius = Math.min(width, height) / 2;  // Rayon du camembert
+
+
 
 // Création du SVG pour le taux de mortalité
 var svgMortalite = d3.select("#taux-mortalite-chart")
@@ -428,31 +425,7 @@ updateMortaliteChart(2019);
 
 
 
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// Dimensions et marges pour production
-var margin = {top: 20, right: 30, bottom: 40, left: 40},
-width = 400 - margin.left - margin.right,
-height = 300 - margin.top - margin.bottom,
-radius = Math.min(width, height) / 2;  // Rayon du camembert
-
-// Création du SVG pour le camembert
+// Création du SVG pour le camembert pour la matière agricole
 var svgProduction = d3.select("#production-chart")
 .attr("width", width + margin.left + margin.right)
 .attr("height", height + margin.top + margin.bottom)
@@ -464,8 +437,8 @@ var color = d3.scaleOrdinal(d3.schemeCategory10);
 
       // Fonction pour créer les arcs
 var arc = d3.arc()
-.outerRadius(radius - 10)
-.innerRadius(0);  // Camembert
+.outerRadius(radius*0.6)
+.innerRadius(radius-10);  // Camembert
 
 // Fonction pour les arcs des étiquettes (placées légèrement à l'extérieur du camembert)
 var arcLabel = d3.arc()
@@ -479,65 +452,65 @@ var pie = d3.pie()
 
 // Matière premiere
 function updateProductionChart(type, year) {
-d3.json("/data").then(function(data) {
-    // Filtrer les données selon l'année et le type
-    var filteredData = data.filter(function(d) {
-        return d.indicateur === type && d.annee === year;
-    });
+        d3.json("/data").then(function(data) {
+            // Filtrer les données selon l'année et le type
+            var filteredData = data.filter(function(d) {
+                return d.indicateur === type && d.annee === year;
+            });
 
-    // Calculer la somme totale des valeurs pour obtenir les pourcentages
-    var total = d3.sum(filteredData, function(d) { return d.valeur; });
+            // Calculer la somme totale des valeurs pour obtenir les pourcentages
+            var total = d3.sum(filteredData, function(d) { return d.valeur; });
 
-    // Mettre en forme les données pour le layout pie
-    var arcs = pie(filteredData);
+            // Mettre en forme les données pour le layout pie
+            var arcs = pie(filteredData);
 
-    // Nettoyer le graphique avant de redessiner
-    svgProduction.selectAll("*").remove();
+            // Nettoyer le graphique avant de redessiner
+            svgProduction.selectAll("*").remove();
 
-    // Créer des groupes pour chaque section du camembert
-    var g = svgProduction.selectAll(".arc")
-        .data(arcs)
-        .enter().append("g")
-        .attr("class", "arc");
+            // Créer des groupes pour chaque section du camembert
+            var g = svgProduction.selectAll(".arc")
+                .data(arcs)
+                .enter().append("g")
+                .attr("class", "arc");
 
-    // Dessiner les sections du camembert
-    g.append("path")
-        .attr("d", arc)
-        .attr("fill", function(d) { return color(d.data.produit); })
-        .transition()  // Ajout d'une transition douce
-        .duration(750);
+            // Dessiner les sections du camembert
+            g.append("path")
+                .attr("d", arc)
+                .attr("fill", function(d) { return color(d.data.produit); })
+                .transition()  // Ajout d'une transition douce
+                .duration(750);
 
-    // Ajouter les étiquettes avec le pourcentage à l'extérieur du camembert
-    g.append("text")
-        .attr("transform", function(d) {
-            var pos = arcLabel.centroid(d);  // Positionner les étiquettes à l'extérieur
-            pos[0] = radius * (d.startAngle + d.endAngle < Math.PI ? 0.8 : -0.8);  // Ajustement gauche/droite
-            return "translate(" + pos + ")";
-        })
-        .attr("dy", "0.35em")
-        .style("text-anchor", function(d) {
-            return (d.startAngle + d.endAngle) < Math.PI ? "start" : "end";  // Alignement des étiquettes
-        })
-        .text(function(d) {
-            var pourcentage = (d.data.valeur / total * 100).toFixed(1);  // Calcul du pourcentage
-            return d.data.produit + " (" + pourcentage + "%)";  // Affichage de l'étiquette
+            // Ajouter les étiquettes avec le pourcentage à l'extérieur du camembert
+            g.append("text")
+                .attr("transform", function(d) {
+                    var pos = arcLabel.centroid(d);  // Positionner les étiquettes à l'extérieur
+                    pos[0] = radius * (d.startAngle + d.endAngle < Math.PI ? 0.8 : -0.8);  // Ajustement gauche/droite
+                    return "translate(" + pos + ")";
+                })
+                .attr("dy", "0.35em")
+                .style("text-anchor", function(d) {
+                    return (d.startAngle + d.endAngle) < Math.PI ? "start" : "end";  // Alignement des étiquettes
+                })
+                .text(function(d) {
+                    var pourcentage = (d.data.valeur / total * 100).toFixed(1);  // Calcul du pourcentage
+                    return d.data.produit + " (" + pourcentage + "%)";  // Affichage de l'étiquette
+                });
+
+            // Ajouter des lignes (flèches) pour relier les segments aux étiquettes
+            svgProduction.selectAll("polyline")
+                .data(arcs)
+                .enter().append("polyline")
+                .attr("points", function(d) {
+                    var posA = arc.centroid(d);  // Position du centre du segment
+                    var posB = arcLabel.centroid(d);  // Position de l'étiquette
+                    posB[0] = radius * (d.startAngle + d.endAngle < Math.PI ? 0.8 : -0.8);  // Ajustement de la direction
+                    return [posA, posB];  // Dessine la ligne du centre au bord du camembert puis vers l'étiquette
+                })
+                .style("fill", "blue")
+                .style("stroke", "red")
+                .style("stroke-width", "1px");
         });
-
-    // Ajouter des lignes (flèches) pour relier les segments aux étiquettes
-    svgProduction.selectAll("polyline")
-        .data(arcs)
-        .enter().append("polyline")
-        .attr("points", function(d) {
-            var posA = arc.centroid(d);  // Position du centre du segment
-            var posB = arcLabel.centroid(d);  // Position de l'étiquette
-            posB[0] = radius * (d.startAngle + d.endAngle < Math.PI ? 0.8 : -0.8);  // Ajustement de la direction
-            return [posA, posB];  // Dessine la ligne du centre au bord du camembert puis vers l'étiquette
-        })
-        .style("fill", "blue")
-        .style("stroke", "red")
-        .style("stroke-width", "1px");
-});
-}
+        }
 
        
        // Mise à jour du graphique lorsque l'année change
@@ -553,12 +526,9 @@ d3.json("/data").then(function(data) {
        
        
        
-       // Diagramme en bande-------------------------------------
        
-              // Dimensions des graphiques
-       var margin = {top: 20, right: 30, bottom: 40, left: 40},
-       width = 400 - margin.left - margin.right,
-       height = 300 - margin.top - margin.bottom;
+       // Diagramme en bande-------------------------------------
+ 
        
        // Initialisation des graphiques
        var svgPopulation = d3.select("#population-chart"),
@@ -675,189 +645,169 @@ d3.json("/data").then(function(data) {
                 });
 
         
-            // Supprimer les anciens labels
-            labels.exit().remove();
-        }
-        
-        else if (type === "Taux de scolarisation") {
-            xScolarisation.domain(filteredData.map(function(d) { return d.cycle_scolaire; }));
-            yScolarisation.domain([0, 100]);  // Le domaine Y va de 0 à 100 pour refléter les pourcentages
-        
-            // Appel de l'axe X
-            xAxisScolarisation.call(d3.axisBottom(xScolarisation))
-                .selectAll("text")
-                .style("text-anchor", "end")
-                .attr("dx", "-0.8em")
-                .attr("dy", "0.15em")
-                .attr("transform", "rotate(-30)");
-        
-            // Appel de l'axe Y
-            yAxisScolarisation.call(d3.axisLeft(yScolarisation));
-        
-            // Sélection et affichage des barres
-            var bars = gScolarisation.selectAll(".bar").data(filteredData);
-        
-            bars.enter().append("rect")
-                .attr("class", "bar")
-                .attr("x", function(d) { return xScolarisation(d.cycle_scolaire); })
-                .attr("y", function(d) { return yScolarisation(d.valeur); })
-                .attr("width", xScolarisation.bandwidth() * 0.5)
-                .attr("height", function(d) { return height - yScolarisation(d.valeur); })
-                .merge(bars)
-                .transition()
-                .duration(750)
-                .attr("x", function(d) { return xScolarisation(d.cycle_scolaire); })
-                .attr("y", function(d) { return yScolarisation(d.valeur); })
-                .attr("width", xScolarisation.bandwidth() * 0.5)
-                .attr("height", function(d) { return height - yScolarisation(d.valeur); });
-        
-            bars.exit().remove();
-        
-            // Ajouter les pourcentages au-dessus de chaque barre
-            var labels = gScolarisation.selectAll(".label").data(filteredData);
-        
-            // Ajout du texte des pourcentages pour chaque barre
-            labels.enter().append("text")
-                .attr("class", "label")
-                .attr("x", function(d) { return xScolarisation(d.cycle_scolaire) + xScolarisation.bandwidth() * 0.25; })  // Centrer le texte dans la barre
-                .attr("y", function(d) { return yScolarisation(d.valeur) - 5; })  // Positionner au-dessus de la barre
-                .attr("text-anchor", "middle")
-                .text(function(d) {
-                    return d.valeur + "%";  // Afficher le pourcentage directement
-                })
-                .merge(labels)
-                .transition()
-                .duration(750)
-                .attr("x", function(d) { return xScolarisation(d.cycle_scolaire) + xScolarisation.bandwidth() * 0.25; })
-                .attr("y", function(d) { return yScolarisation(d.valeur) - 5; })  // Ajuster au-dessus de la barre
-                .text(function(d) {
-                    return d.valeur + "%";  // Toujours afficher le pourcentage
-                });
-        
-            labels.exit().remove();
-        }
-        
+                    // Supprimer les anciens labels
+                    labels.exit().remove();
+                }
+                
+                else if (type === "Taux de scolarisation") {
+                    xScolarisation.domain(filteredData.map(function(d) { return d.cycle_scolaire; }));
+                    yScolarisation.domain([0, 100]);  // Le domaine Y va de 0 à 100 pour refléter les pourcentages
+                
+                    // Appel de l'axe X
+                    xAxisScolarisation.call(d3.axisBottom(xScolarisation))
+                        .selectAll("text")
+                        .style("text-anchor", "end")
+                        .attr("dx", "-0.8em")
+                        .attr("dy", "0.15em")
+                        .attr("transform", "rotate(-30)");
+                
+                    // Appel de l'axe Y
+                    yAxisScolarisation.call(d3.axisLeft(yScolarisation));
+                
+                    // Sélection et affichage des barres
+                    var bars = gScolarisation.selectAll(".bar").data(filteredData);
+                
+                    bars.enter().append("rect")
+                        .attr("class", "bar")
+                        .attr("x", function(d) { return xScolarisation(d.cycle_scolaire); })
+                        .attr("y", function(d) { return yScolarisation(d.valeur); })
+                        .attr("width", xScolarisation.bandwidth() * 0.5)
+                        .attr("height", function(d) { return height - yScolarisation(d.valeur); })
+                        .merge(bars)
+                        .transition()
+                        .duration(750)
+                        .attr("x", function(d) { return xScolarisation(d.cycle_scolaire); })
+                        .attr("y", function(d) { return yScolarisation(d.valeur); })
+                        .attr("width", xScolarisation.bandwidth() * 0.5)
+                        .attr("height", function(d) { return height - yScolarisation(d.valeur); });
+                
+                    bars.exit().remove();
+                
+                    // Ajouter les pourcentages au-dessus de chaque barre
+                    var labels = gScolarisation.selectAll(".label").data(filteredData);
+                
+                    // Ajout du texte des pourcentages pour chaque barre
+                    labels.enter().append("text")
+                        .attr("class", "label")
+                        .attr("x", function(d) { return xScolarisation(d.cycle_scolaire) + xScolarisation.bandwidth() * 0.25; })  // Centrer le texte dans la barre
+                        .attr("y", function(d) { return yScolarisation(d.valeur) - 5; })  // Positionner au-dessus de la barre
+                        .attr("text-anchor", "middle")
+                        .text(function(d) {
+                            return d.valeur + "%";  // Afficher le pourcentage directement
+                        })
+                        .merge(labels)
+                        .transition()
+                        .duration(750)
+                        .attr("x", function(d) { return xScolarisation(d.cycle_scolaire) + xScolarisation.bandwidth() * 0.25; })
+                        .attr("y", function(d) { return yScolarisation(d.valeur) - 5; })  // Ajuster au-dessus de la barre
+                        .text(function(d) {
+                            return d.valeur + "%";  // Toujours afficher le pourcentage
+                        });
+                
+                    labels.exit().remove();
+                }
+                
+            
+                else if (type === "Effectif de la population1") {  // Correction du nom de l'indicateur
+                // Définir le domaine de l'axe des x
+                xPopulationSexe.domain(filteredData.map(function(d) { return d.sexe; }));
+                
+                // Définir le domaine de l'axe des y
+                yPopulationSexe.domain([1000000, 8000000]);
+            
+                // Calculer le total des valeurs pour obtenir les pourcentages
+                var total = d3.sum(filteredData, function(d) { return d.valeur; });
+            
+                // Appel de l'axe Y avec des ticks personnalisés
+                yAxisPopulationSexe.call(d3.axisLeft(yPopulationSexe)
+                    .tickValues([1000000, 2000000, 3000000, 4000000, 5000000, 8000000])  // Valeurs spécifiques des ticks
+                    .tickFormat(function(d) {
+                        if (d === 1000000) {
+                            return "1M";  // Affichage pour 1 million
+                        } else if (d === 2000000) {
+                            return "2M";  // Affichage pour 2 millions
+                        } else if (d === 3000000) {
+                            return "3M";  // Affichage pour 3 millions
+                        } else if (d === 4000000) {
+                            return "4M";  // Affichage pour 4 millions
+                        } else if (d === 5000000) {
+                            return "5M";  // Affichage pour 5 millions
+                        } else if (d === 8000000) {
+                            return "6M+";  // Affichage pour 6 millions et plus
+                        }
+                    })
+                );
+            
+                // Appel de l'axe X
+                xAxisPopulationSexe.call(d3.axisBottom(xPopulationSexe));
+            
+                // Sélection des barres
+                var bars = gPopulationSexe.selectAll(".bar").data(filteredData);
+            
+                // Créer les nouvelles barres
+                bars.enter().append("rect")
+                    .attr("class", "bar")
+                    .attr("x", function(d) { return xPopulationSexe(d.sexe); })
+                    .attr("y", function(d) { return yPopulationSexe(d.valeur); })
+                    .attr("width", xPopulationSexe.bandwidth() * 0.5)
+                    .attr("height", function(d) { return height - yPopulationSexe(d.valeur); })
+                    .merge(bars)
+                    .transition()
+                    .duration(750)
+                    .attr("x", function(d) { return xPopulationSexe(d.sexe); })
+                    .attr("y", function(d) { return yPopulationSexe(d.valeur); })
+                    .attr("width", xPopulationSexe.bandwidth() * 0.5)
+                    .attr("height", function(d) { return height - yPopulationSexe(d.valeur); });
+            
+                // Supprimer les barres qui ne sont plus nécessaires
+                bars.exit().remove();
+            
+                // Ajouter les pourcentages au-dessus de chaque barre
+                var labels = gPopulationSexe.selectAll(".label").data(filteredData);
+            
+                labels.enter().append("text")
+                    .attr("class", "label")
+                    .attr("x", function(d) { return xPopulationSexe(d.sexe) + xPopulationSexe.bandwidth() * 0.25; })  // Centrer le texte dans la barre
+                    .attr("y", function(d) { return yPopulationSexe(d.valeur) - 5; })  // Positionner au-dessus de la barre
+                    .attr("text-anchor", "middle")
+                    .text(function(d) {
+                        var percentage = ((d.valeur / total) * 100).toFixed(2);  // Calcul du pourcentage
+                        return percentage + "%";  // Afficher le pourcentage
+                    })
+                    .merge(labels)
+                    .transition()
+                    .duration(750)
+                    .attr("x", function(d) { return xPopulationSexe(d.sexe) + xPopulationSexe.bandwidth() * 0.25; })
+                    .attr("y", function(d) { return yPopulationSexe(d.valeur) - 5; })  // Ajuster au-dessus de la barre
+                    .text(function(d) {
+                        var percentage = ((d.valeur / total) * 100).toFixed(2);  // Calcul du pourcentage
+                        return percentage + "%";  // Afficher le pourcentage
+                    });
+            
+                labels.exit().remove();
+            }
+            
+            
+            
+            });
+            }
+            // Mise à jour des graphiques lorsque l'année change
+            document.getElementById("year-slider").addEventListener("input", function() {
+            var year = +this.value;
+            document.getElementById("selected-year").textContent = year;
+            
+            updateChart("Effectif de la population", year);
+            updateChart("Effectif de la population1", year);
+            updateChart("Taux de scolarisation", year);
+            updateChart("Production", year);
+            });
+            
+            // Initialisation des graphiques
+            updateChart("Effectif de la population", {{min}});
+            updateChart("Taux de scolarisation",{{min}});
+            updateChart("Effectif de la population1", {{min}});
+            updateProductionChart("Production",{{min}});
        
-           else if (type === "Effectif de la population1") {  // Correction du nom de l'indicateur
-           // Définir le domaine de l'axe des x
-           xPopulationSexe.domain(filteredData.map(function(d) { return d.sexe; }));
-           
-           // Définir le domaine de l'axe des y
-           yPopulationSexe.domain([1000000, 8000000]);
-       
-           // Calculer le total des valeurs pour obtenir les pourcentages
-           var total = d3.sum(filteredData, function(d) { return d.valeur; });
-       
-           // Appel de l'axe Y avec des ticks personnalisés
-           yAxisPopulationSexe.call(d3.axisLeft(yPopulationSexe)
-               .tickValues([1000000, 2000000, 3000000, 4000000, 5000000, 8000000])  // Valeurs spécifiques des ticks
-               .tickFormat(function(d) {
-                   if (d === 1000000) {
-                       return "1M";  // Affichage pour 1 million
-                   } else if (d === 2000000) {
-                       return "2M";  // Affichage pour 2 millions
-                   } else if (d === 3000000) {
-                       return "3M";  // Affichage pour 3 millions
-                   } else if (d === 4000000) {
-                       return "4M";  // Affichage pour 4 millions
-                   } else if (d === 5000000) {
-                       return "5M";  // Affichage pour 5 millions
-                   } else if (d === 8000000) {
-                       return "6M+";  // Affichage pour 6 millions et plus
-                   }
-               })
-           );
-       
-           // Appel de l'axe X
-           xAxisPopulationSexe.call(d3.axisBottom(xPopulationSexe));
-       
-           // Sélection des barres
-           var bars = gPopulationSexe.selectAll(".bar").data(filteredData);
-       
-           // Créer les nouvelles barres
-           bars.enter().append("rect")
-               .attr("class", "bar")
-               .attr("x", function(d) { return xPopulationSexe(d.sexe); })
-               .attr("y", function(d) { return yPopulationSexe(d.valeur); })
-               .attr("width", xPopulationSexe.bandwidth() * 0.5)
-               .attr("height", function(d) { return height - yPopulationSexe(d.valeur); })
-               .merge(bars)
-               .transition()
-               .duration(750)
-               .attr("x", function(d) { return xPopulationSexe(d.sexe); })
-               .attr("y", function(d) { return yPopulationSexe(d.valeur); })
-               .attr("width", xPopulationSexe.bandwidth() * 0.5)
-               .attr("height", function(d) { return height - yPopulationSexe(d.valeur); });
-       
-           // Supprimer les barres qui ne sont plus nécessaires
-           bars.exit().remove();
-       
-           // Ajouter les pourcentages au-dessus de chaque barre
-           var labels = gPopulationSexe.selectAll(".label").data(filteredData);
-       
-           labels.enter().append("text")
-               .attr("class", "label")
-               .attr("x", function(d) { return xPopulationSexe(d.sexe) + xPopulationSexe.bandwidth() * 0.25; })  // Centrer le texte dans la barre
-               .attr("y", function(d) { return yPopulationSexe(d.valeur) - 5; })  // Positionner au-dessus de la barre
-               .attr("text-anchor", "middle")
-               .text(function(d) {
-                   var percentage = ((d.valeur / total) * 100).toFixed(2);  // Calcul du pourcentage
-                   return percentage + "%";  // Afficher le pourcentage
-               })
-               .merge(labels)
-               .transition()
-               .duration(750)
-               .attr("x", function(d) { return xPopulationSexe(d.sexe) + xPopulationSexe.bandwidth() * 0.25; })
-               .attr("y", function(d) { return yPopulationSexe(d.valeur) - 5; })  // Ajuster au-dessus de la barre
-               .text(function(d) {
-                   var percentage = ((d.valeur / total) * 100).toFixed(2);  // Calcul du pourcentage
-                   return percentage + "%";  // Afficher le pourcentage
-               });
-       
-           labels.exit().remove();
-       }
-       
-       
-       
-       });
-       }
-       
-       
-       
-       
-       
-       // Mise à jour des graphiques lorsque l'année change
-       document.getElementById("year-slider").addEventListener("input", function() {
-       var year = +this.value;
-       document.getElementById("selected-year").textContent = year;
-       
-       updateChart("Effectif de la population", year);
-       updateChart("Effectif de la population1", year);
-       updateChart("Taux de scolarisation", year);
-       updateChart("Production", year);
-       });
-       
-       // Initialisation des graphiques
-       updateChart("Effectif de la population", {{min}});
-       updateChart("Taux de scolarisation",{{min}});
-       updateChart("Effectif de la population1", {{min}});
-       updateProductionChart("Production",{{min}});
-       
-       
-
-
-       function toggleText(button) {
-        var text = button.previousElementSibling; // Accède à l'élément <p>
-        if (text.style.overflow === "hidden") {
-            text.style.overflow = "visible"; // Affiche tout le texte
-            text.style.maxHeight = "none"; // Enlève la limite de hauteur
-            button.textContent = "Réduire"; // Change le texte du bouton
-        } else {
-            text.style.overflow = "hidden"; // Masque le texte
-            text.style.maxHeight = "100px"; // Réapplique la limite de hauteur
-            button.textContent = "Lire la suite"; // Rétablit le texte du bouton
-        }
-    }
-           </script>
+ </script>
 </body>
 </html>
