@@ -11,11 +11,9 @@ import config as cf
 import pandas as pd
 from io import StringIO
 import io
-import matplotlib.pyplot as plt
 
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
+
+
 import folium
 import json
 # On a une liste sur les régions de la CI, en effet elle est la page principale
@@ -33,14 +31,9 @@ from datetime import datetime
 
 
 app = Flask(__name__)
-
-
-# Configuration du logging
 logging.basicConfig(level=logging.DEBUG)
-
 # Configuration de la clé secrète pour les sessions Flask
 app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY', 'votre_clé_secrète')
-
 # Configuration de la base de données
 app.config['SQLALCHEMY_DATABASE_URI'] = (
     f"mysql+pymysql://{os.getenv('MYSQL_USER')}:{os.getenv('MYSQL_PASSWORD')}"
@@ -55,7 +48,7 @@ migrate = Migrate(app, db)
 
 
 
-# Fichier pour stocker les données persistantes
+# Fichier pour stocker les données sur l'horloge de population
 STORAGE_FILE = 'births_data.json'
 
 # Date de départ pour le calcul des naissances (exemple : 1er janvier 2022)

@@ -5195,6 +5195,21 @@ fieldset:disabled .btn {
 .navbar-expand .navbar-toggler {
   display: none;
 }
+.blink {
+  animation: blink-animation 1s infinite;
+}
+
+@keyframes blink-animation {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
 
 .navbar-expand .offcanvas {
   position: static;
@@ -26141,6 +26156,13 @@ a {
 
 .text-sm {
   line-height: 1.5;
+  color:black;
+  font-weight: bold;
+}
+
+.text-sm-1{
+  line-height: 1.5;
+  
 }
 
 .text-xs {
@@ -26165,7 +26187,7 @@ p,
 }
 
 .text-sm {
-  font-size: 0.875rem !important;
+  font-size: 1em !important;
 }
 
 .text-xs {

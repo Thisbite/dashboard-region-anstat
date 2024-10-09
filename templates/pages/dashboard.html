@@ -57,7 +57,7 @@
         </li>
        
         <li class="nav-item">
-          <a class="nav-link text-white " href="{{ url_for('fiche_synoptique',region=region) }}">
+          <a class="nav-link text-white " href="{{ url_for('show_region_pdf',region=region) }}">
             <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
               <i class="material-icons opacity-10">view_in_ar</i>
             </div>
@@ -132,13 +132,13 @@
                 <i class="material-icons opacity-10">restaurant</i>
               </div>
               <div class="text-end pt-1">
-                <p class="text-sm mb-0 text-capitalize">Taux de pauvreté</p>
+                <p class="text-sm mb-0 ">Taux de pauvreté</p>
                 <h4 class="mb-0">58%</h4>
               </div>
             </div>
             <hr class="dark horizontal my-0">
             <div class="card-footer p-3">
-              <p class="mb-0"><span class="text-success text-sm font-weight-bolder">55% </span>valeur national</p>
+              <p class="mb-0"><span class="text-success text-sm font-weight-bolder"><span class="mb-0 blink">+5 </span></span>national(2021)</p>
             </div>
           </div>
         </div>
@@ -156,7 +156,7 @@
             </div>
             <hr class="dark horizontal my-0">
             <div class="card-footer p-3">
-              <p class="mb-0"><span class="text-success text-sm font-weight-bolder">+3% </span>valeur nationale</p>
+              <p class="mb-0"><span class="text-success text-sm font-weight-bolder"> <span class="mb-0 blink">+3% </span></span> national(2021)</p>
             </div>
           </div>
         </div>
@@ -169,12 +169,12 @@
               </div>
               <div class="text-end pt-1">
                 <p class="text-sm mb-0 ">Accès a la santé</p>
-                <h4 class="mb-0">90%</h4>
+                <h4 id="mb-0 blink" class="mb-0">90%</h4>
               </div>
             </div>
             <hr class="dark horizontal my-0">
             <div class="card-footer p-3">
-              <p class="mb-0"><span class="text-danger text-sm font-weight-bolder">-2%</span> nationale</p>
+              <p class="mb-0"><span class="text-danger text-sm font-weight-bolder"> <span class="mb-0 blink">-2% </span></span> nationale</p>
             </div>
           </div>
         </div>
@@ -208,11 +208,11 @@
             </div>
             <div class="card-body">
               <h6 class="mb-0 ">Évolution de la population</h6>
-              <p class="text-sm ">Evolution par sexe </p>
+              <p class="text-sm ">(par sexe) </p>
               <hr class="dark horizontal">
               <div class="d-flex ">
                 <i class="material-icons text-sm my-auto me-1">schedule</i>
-                <p class="mb-0 text-sm"> Prochaine campagne dans 3 mois </p>
+                <p class="mb-0 text-sm-1"> Prochaine campagne dans 3 mois </p>
               </div>
             </div>
           </div>
@@ -228,11 +228,11 @@
             </div>
             <div class="card-body">
               <h6 class="mb-0 "> Évolution de production agricole </h6>
-              <p class="text-sm ">  Évolution de la production coton  </p>
+              <p class="text-sm "> (coton )  </p>
               <hr class="dark horizontal">
               <div class="d-flex ">
                 <i class="material-icons text-sm my-auto me-1">schedule</i>
-                <p class="mb-0 text-sm"> updated 4 min ago </p>
+                <p class="mb-0 text-sm-1"> Mise à jour il y a 4 jours </p>
               </div>
             </div>
           </div>
@@ -248,7 +248,7 @@
             </div>
             <div class="card-body">
               <h6 class="mb-0 ">Taux de scolarisation</h6>
-              <p class="text-sm ">Niveau primaire</p>
+              <p class="text-sm "> primaire</p>
               <hr class="dark horizontal">
               <div class="d-flex ">
 
