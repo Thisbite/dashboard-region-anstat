@@ -19,19 +19,18 @@ import matplotlib.pyplot as plt
 import folium
 import json
 # On a une liste sur les régions de la CI, en effet elle est la page principale
-import matplotlib
-matplotlib.use('Agg')  # Utilisation du backend non interactif
-import matplotlib.pyplot as plt
+
 
 from flask import render_template
-import plotly.graph_objects as go
-import plotly.io as pio
-import branca.colormap as cm 
 
-from flask import Flask, render_template
-import json
-import folium
-import branca.colormap as cm
+import branca.colormap as cm 
+import random
+import time
+from datetime import datetime
+
+
+
+
 
 app = Flask(__name__)
 
@@ -54,16 +53,140 @@ db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
 
-#Bloc de conception de dashoard 
 
-@app.route('/page')
-def index():
-    return render_template('rindex.html')
+
+# Fichier pour stocker les données persistantes
+STORAGE_FILE = 'births_data.json'
+
+# Date de départ pour le calcul des naissances (exemple : 1er janvier 2022)
+START_DATE = datetime(2022, 1, 1)
+
+# Fonction pour calculer les naissances par seconde avec variation
+def get_births_per_second():
+    moyenne_naissance = 10
+    variation = random.uniform(-0.034, 0.034)
+    return round(moyenne_naissance, 2)
+
+# Fonction pour charger l'état actuel du compteur
+def load_birth_data():
+    if os.path.exists(STORAGE_FILE):
+        with open(STORAGE_FILE, 'r') as f:
+            data = json.load(f)
+            return data
+    # Si le fichier n'existe pas, on retourne un total de naissances par défaut et la date de départ
+    return {'total_births':29090897, 'last_time': START_DATE.timestamp()}
+
+# Fonction pour sauvegarder l'état actuel du compteur
+def save_birth_data(total_births, last_time):
+    data = {'total_births': total_births, 'last_time': last_time}
+    with open(STORAGE_FILE, 'w') as f:
+        json.dump(data, f)
+
+# Fonction pour calculer les naissances accumulées depuis une date de départ
+def calculate_accumulated_births():
+    birth_data = load_birth_data()
+    last_time = birth_data['last_time']
+    total_births = birth_data['total_births']
+
+    # Temps écoulé depuis la date de départ ou la dernière mise à jour (en secondes)
+    current_time = time.time()
+    elapsed_time = current_time - last_time
+
+    # Calculer les naissances accumulées pendant ce temps
+    births_per_second = get_births_per_second()
+    accumulated_births = births_per_second * elapsed_time
+
+    # Mettre à jour le total des naissances
+    total_births += accumulated_births
+
+    # Sauvegarder le nouvel état
+    save_birth_data(total_births, current_time)
+
+    return total_births
+
+@app.route('/naissance')
+def naissance():
+    return render_template('naissance.html')
+
+@app.route('/births_data')
+def births_data():
+    # Calculer les naissances accumulées
+    total_births = calculate_accumulated_births()
+
+    # Obtenir la date et l'heure actuelles
+    now = datetime.now()
+    
+    # Extraire le jour, le mois et l'année
+    day = now.day
+    month = now.month
+    year = now.year
+
+    # Renvoie les données en JSON pour le frontend
+    data = {
+        'time': time.time(),
+        'total_births': round(total_births, 2),
+        'births_per_second': get_births_per_second(),
+        'day': day,
+        'month': month,
+        'year': year
+    }
+    return jsonify(data)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 @app.route('/dashboard')
 def dashboard():
-    return render_template('pages/dashboard.html')
+    # Définir les années de 2018 à 2024
+    region = request.args.get('region', session.get('region', 'DefaultRegion'))
+    min_year = 2018
+    max_year = 2024
+    annees = list(range(min_year, max_year + 1))
+    sexes = ['M', 'F']
+
+    data = { 'M': [], 'F': [] }
+    data_coton = []
+    
+    # Générer les données pour chaque année et sexe pour la région sélectionnée
+    for sexe in sexes:
+        for annee in annees:
+            total_population = random.randint(50000, 1000000)
+            data[sexe].append({'annee': annee, 'valeur': total_population})
+            
+    # Générer les données du coton pour chaque année
+    for annee in annees:
+        total_population = random.randint(50000, 1000000)
+        data_coton.append(total_population)
+    
+    return render_template('pages/dashboard.html', region=region, data=data, annees=annees, data_coton=data_coton)
+
+
+#Fiche synoptique
+@app.route('/fiche-synoptique')
+def fiche_synoptique():
+     # Définir les années de 2018 à 2024
+    region = request.args.get('region', session.get('region'))
+    
+    if region is None:
+        return "Veuillez choisir une région.", 400
+    return render_template('pages/notifications.html',region=region)
+    
+
 
 
 
@@ -162,53 +285,24 @@ def statistiques():
 def list_regions():
     regions = qr.options_regions()
     map_html = dt.statistiques()
-
+    coord_list=[]
     # Données
     years = [2019, 2020, 2021, 2022, 2023]
     population = [24.0, 27.0, 27.4, 29.8, 30.38]
     school_enrollment_rate = [75, 76, 78, 79, 80]
     age_groups = ['0-14 ans', '15-24 ans', '25-54 ans', '55 - 59 ans','60 -64 ','65-69','70-74 ans']
-    age_distribution = [40, 20, 30, 10,18,20]
-    config = {"displayModeBar": False}
+    age_distribution = [40, 20, 30, 10, 18, 20]
 
-    # Graphique 1 : Évolution de la population (plotly)
-    fig1 = go.Figure()
-    fig1.add_trace(go.Scatter(x=years, y=population, mode='lines+markers', name='Population', marker=dict(color='blue')))
-    fig1.update_layout(
-    title="Évolution de la population (en millions) <br> de 2019-2023", 
-    xaxis_title="Année", 
-    yaxis_title="Population (en millions)", 
-    hovermode="x unified"
-)
-
-
-    # Graphique 2 : Taux de scolarisation (plotly)
-    fig2 = go.Figure()
-    fig2.add_trace(go.Scatter(x=years, y=school_enrollment_rate, mode='lines+markers', name='Taux de scolarisation', marker=dict(color='green')))
-    fig2.update_layout(title="Taux de scolarisation (%) de 2019-2023", 
-                       xaxis_title="Année", yaxis_title="Taux de scolarisation (%)", 
-                       hovermode="x unified")
-
-    # Graphique 3 : Population par tranche d'âge (plotly)
-    fig3 = go.Figure()
-    fig3.add_trace(go.Bar(x=age_groups, y=age_distribution, name="Distribution d'âge", marker=dict(color='blue')))
-    fig3.update_layout(title="Population par tranche d'âge en 2023", 
-                       xaxis_title="Tranche d'âge", yaxis_title="Pourcentage (%)")
-
-    # Convertir les graphiques en HTML
-    population_graph_html = pio.to_html(fig1, full_html=False, config=config)
-    enrollment_graph_html = pio.to_html(fig2, full_html=False, config=config)
-    age_graph_html = pio.to_html(fig3, full_html=False, config=config)
-
-    # Passer les données aux templates
     return render_template('home.html',
-                           #regions=regions,
-                           coord_list=[],  # Ajouter vos coordonnées ici
-                           map_html=map_html,
-                           population_graph_html=population_graph_html,
-                           enrollment_graph_html=enrollment_graph_html,
-                           age_graph_html=age_graph_html,
-                           regions=regions)
+                           coord_list=coord_list,
+                           years=years,
+                           population=population,
+                           school_enrollment_rate=school_enrollment_rate,
+                           age_groups=age_groups,
+                           age_distribution=age_distribution,
+                           regions=regions,
+                           map_html=map_html )
+
 
 
 

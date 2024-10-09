@@ -189,59 +189,60 @@ body {
     margin: 0;                   /* Retirer toute marge par défaut du titre */
 }
 
-
-
-/* Conteneur principal avec un style de cadre 
-Bloc du bas
-
-*/
+/* Conteneur principal pour trois colonnes */
 .frame-container {
+    width: 100%;
+    display: flex;
+    justify-content: space-around;
     padding: 20px;
-    border: 2px solid #de6422; /* Bordure bleue autour du cadre */
-    border-radius: 10px; /* Coins arrondis pour le cadre */
-    background-color: rgba(240, 248, 255, 0.8); /* Fond légèrement transparent */
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); /* Ombre portée pour donner un effet de profondeur */
-    margin: 20px;
 }
 
-/* Conteneur des cartes */
-.bottom-container {
+/* Conteneur principal pour trois colonnes */
+.frame-container {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 20px;
+}
+
+
+/* Conteneur pour aligner les cartes de graphiques sur une ligne */
+.charts-row-container {
     display: flex;
     justify-content: space-between;
     gap: 20px; /* Espace entre les cartes */
-    padding: 20px 0;
+    padding: 20px;
+    box-sizing: border-box;
 }
 
-/* Style des cartes */
-.card {
+/* Style pour les cartes de graphique individuelles */
+.chart-card {
     background-color: white;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     border-radius: 8px;
-    width: 30%;
+    width: calc(33.33% - 20px); /* Pour avoir 3 cartes sur une ligne */
     padding: 20px;
     text-align: center;
-    transition: transform 0.2s;
+    box-sizing: border-box;
 }
 
-.card:hover {
-    transform: translateY(-10px);
-}
-
-.card h3 {
-    font-size: 1.5em;
-    margin-bottom: 15px;
-}
-
-/* Contenu des cartes */
-.card-content {
-    margin-top: 20px;
-}
-
-/* Pour ajuster les graphiques dans les cartes */
-.card-content iframe {
+/* S'assurer que les graphiques s'adaptent à la carte */
+.chart-container {
     width: 100%;
-    height: 400px;
-    border: none;
+    height: auto;
+    margin-bottom: 20px;
+}
+
+/* Ajustement pour les petits écrans */
+@media (max-width: 768px) {
+    .charts-row-container {
+        flex-direction: column; /* Les graphiques passent en colonne sur les petits écrans */
+    }
+
+    .chart-card {
+        width: 100%; /* Chaque carte occupe toute la largeur sur petit écran */
+    }
 }
 
 
@@ -326,3 +327,6 @@ marquee {
     overflow: hidden;
     border-radius: 8px;
 }
+
+
+

@@ -13,6 +13,8 @@
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
     <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 </head>
 <body>
 
@@ -35,10 +37,10 @@
       <!-- Barre de flash infos -->
       <div class="flash-info-bar">
         <marquee behavior="scroll" direction="left" scrollamount="5">
-            Info 1 : <a href="https://example.com/natalite">Le taux de natalité a augmenté de 2%</a> cette année. &nbsp; | &nbsp; 
-            Info 2 : <a href="https://example.com/scolarisation">85% des enfants sont maintenant scolarisés</a>. &nbsp; | &nbsp; 
-            Info 3 : <a href="https://example.com/chomage">Le taux de chômage a chuté à 5%</a>. &nbsp; | &nbsp; 
-            Info 4 : <a href="https://example.com/sante">70% de la population a accès à des soins de santé de base</a>.
+           <a href="https://example.com/natalite">Le taux de natalité a augmenté de 2%</a> en 2024. &nbsp; | &nbsp; 
+          <a href="https://example.com/scolarisation">85% des enfants sont maintenant scolarisés</a>. &nbsp; | &nbsp; 
+         <a href="https://example.com/chomage">Le taux de chômage a chuté à 5%</a>. &nbsp; | &nbsp; 
+        <a href="https://example.com/sante">70% de la population a accès à des soins de santé de base</a>.
         </marquee>
     </div>
     
@@ -72,36 +74,174 @@
             <ul class="region-list">
                 {% for region in regions %}
                 <li>
-                    <a href="{{ url_for('show_region_pdf', region=region) }}">{{ region }}</a>
+                    <a href="{{ url_for('dashboard', region=region) }}">{{ region }}</a>
                 </li>
                 {% endfor %}
             </ul>
         </div>
     </div> 
 <!-- Conteneur principal avec un cadre autour des cartes -->
-<div class="frame-container">
-    <div class="bottom-container">
-        <div class="card">
-         
-            <div class="card-content">
-                {{ population_graph_html|safe }}
-            </div>
+<!-- Nouveau cadre pour aligner les graphes sur une ligne -->
+<div class="charts-row-container">
+    <div class="chart-card">
+        <h5>Évolution de la population</h5>
+        <div class="chart-container">
+            <canvas id="chart-line-population"></canvas>
         </div>
+    </div>
 
-        <div class="card">  
-            <div class="card-content">
-                {{ enrollment_graph_html|safe }}
-            </div>
+    <div class="chart-card">
+        <h5>Taux de scolarisation</h5>
+        <div class="chart-container">
+            <canvas id="chart-line-enrollment"></canvas>
         </div>
+    </div>
 
-        <div class="card">
-            <div class="card-content">
-                {{ age_graph_html|safe }}
-            </div>
+    <div class="chart-card">
+        <h5>Distribution par tranche d'âge</h5>
+        <div class="chart-container">
+            <canvas id="chart-bar-age-distribution"></canvas>
         </div>
     </div>
 </div>
 
+
+<script>
+    // Récupérer les données passées par le backend
+    const years = {{ years|tojson }};
+    const population = {{ population|tojson }};
+    const schoolEnrollmentRate = {{ school_enrollment_rate|tojson }};
+    const ageGroups = {{ age_groups|tojson }};
+    const ageDistribution = {{ age_distribution|tojson }};
+    
+    // Configuration du graphique de l'évolution de la population
+    const populationConfig = {
+        type: 'line',
+        data: {
+            labels: years,
+            datasets: [{
+                label: 'Population (en millions)',
+                data: population,
+                borderColor: 'blue',
+                backgroundColor: 'rgba(0, 0, 255, 0.1)',
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Évolution de la population (en millions) de 2019-2023'
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false
+                }
+            },
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Année'
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Population (en millions)'
+                    }
+                }
+            }
+        }
+    };
+
+    // Configuration du graphique du taux de scolarisation
+    const enrollmentConfig = {
+        type: 'line',
+        data: {
+            labels: years,
+            datasets: [{
+                label: 'Taux de scolarisation (%)',
+                data: schoolEnrollmentRate,
+                borderColor: 'green',
+                backgroundColor: 'rgba(0, 255, 0, 0.1)',
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Taux de scolarisation (%) de 2019-2023'
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false
+                }
+            },
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Année'
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Taux de scolarisation (%)'
+                    }
+                }
+            }
+        }
+    };
+
+    // Configuration du graphique de la distribution d'âge
+    const ageDistributionConfig = {
+        type: 'bar',
+        data: {
+            labels: ageGroups,
+            datasets: [{
+                label: "Distribution d'âge",
+                data: ageDistribution,
+                backgroundColor: 'rgba(0, 0, 255, 0.6)',
+                borderColor: 'blue',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Population par tranche d\'âge en 2023'
+                }
+            },
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Tranche d\'âge'
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Pourcentage (%)'
+                    },
+                    beginAtZero: true
+                }
+            }
+        }
+    };
+
+    // Initialisation des graphiques Chart.js
+    new Chart(document.getElementById('chart-line-population'), populationConfig);
+    new Chart(document.getElementById('chart-line-enrollment'), enrollmentConfig);
+    new Chart(document.getElementById('chart-bar-age-distribution'), ageDistributionConfig);
+</script>
    
     <!-- Script pour l'autocomplétion -->
     <script>

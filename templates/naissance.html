@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accumulation des Naissances</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            text-align: center;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            color: #4CAF50;
+        }
+
+        #birthsBox {
+            font-size: 2.5em;
+            color: #ffffff;
+            background-color: #4CAF50;
+            border-radius: 10px;
+            padding: 20px;
+            width: 350px;
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px auto;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        #downloadButton {
+            font-size: 1.2em;
+            background-color: #008CBA;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        #downloadButton:hover {
+            background-color: #005f6a;
+        }
+    </style>
+</head>
+<body>
+    <h1>Population actuelle</h1>
+    <div id="birthsBox">0</div>  <!-- Box pour afficher la valeur accumulée -->
+    <button id="downloadButton">Télécharger les données</button>
+
+    <script>
+        let totalBirths = 0;  // Variable pour accumuler les naissances
+        let birthDataSeries = [];  // Tableau pour stocker la série de données
+    
+        // Fonction pour mettre à jour la box avec la nouvelle valeur
+        function updateBirthsBox() {
+            fetch('/births_data')  // Appelle l'API Flask pour obtenir les données
+                .then(response => response.json())
+                .then(data => {
+                    totalBirths = data.total_births;  // Met à jour avec la valeur totale
+                    document.getElementById('birthsBox').textContent = totalBirths.toFixed(2);  // Affiche la valeur dans la box
+    
+                    // Ajouter les données dans la série
+                    birthDataSeries.push({
+                        time: new Date(data.time * 1000).toLocaleTimeString(),
+                        births: totalBirths.toFixed(2),
+                        day: data.day,
+                        month: data.month,
+                        year: data.year
+                    });
+                });
+        }
+    
+        // Mettre à jour toutes les secondes
+        setInterval(updateBirthsBox, 1000);
+    
+        // Fonction pour télécharger les données en CSV
+        function downloadCSV() {
+            let csvContent = "data:text/csv;charset=utf-8,Time,Accumulated Births,Day,Month,Year\n";  
+            birthDataSeries.forEach(function(row) {
+                csvContent += row.time + "," + row.births + "," + row.day + "," + row.month + "," + row.year + "\n";
+            });
+    
+            // Créer un lien de téléchargement
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "births_data.csv");
+            document.body.appendChild(link);
+    
+            // Cliquer sur le lien pour télécharger le fichier
+            link.click();
+        }
+    
+        // Ajouter un événement au bouton de téléchargement
+        document.getElementById('downloadButton').addEventListener('click', downloadCSV);
+    </script>
+    
+    
+</body>
+</html>
