@@ -1,7 +1,5 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session,send_file
+from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from flask import jsonify
-
 from flask_migrate import Migrate
 import os
 import logging
@@ -10,40 +8,176 @@ import data as dt
 import config as cf
 import pandas as pd
 from io import StringIO
-import io
-
-
-
 import folium
 import json
-# On a une liste sur les régions de la CI, en effet elle est la page principale
-
-
-from flask import render_template
-
 import branca.colormap as cm 
 import random
 import time
 from datetime import datetime
-
-
-
-
-
+import mysql.connector
+#https://colab.research.google.com/drive/1oBqwcSMb4YTrn0NFUiQzJCiZ65uIay_S?hl=fr#scrollTo=CJAQGVAWNNPw
+#brew services restart elastic/tap/elasticsearch-full
 app = Flask(__name__)
+
+# Configuration du logger pour le débogage
 logging.basicConfig(level=logging.DEBUG)
+
 # Configuration de la clé secrète pour les sessions Flask
-app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY', 'votre_clé_secrète')
+app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY')
+
 # Configuration de la base de données
 app.config['SQLALCHEMY_DATABASE_URI'] = (
-    f"mysql+pymysql://{os.getenv('MYSQL_USER')}:{os.getenv('MYSQL_PASSWORD')}"
-    f"@{os.getenv('MYSQL_HOST')}/{os.getenv('MYSQL_DATABASE')}"
+    f"mysql+pymysql://{os.getenv('MYSQL_USER', 'root')}:{os.getenv('MYSQL_PASSWORD', '')}@"
+    f"{os.getenv('MYSQL_HOST', 'localhost')}/{os.getenv('MYSQL_DATABASE', 'mydatabase')}"
 )
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialisation de la base de données et de la migration
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
+es=cf.es
+import pandas as pd
+from elasticsearch import Elasticsearch
+
+
+# Supprimer l'index s'il existe, puis le recréer
+index_name = 'requete_elastic'
+mapping = {
+    "mappings": {
+        "properties": {
+            "region": {"type": "text"},
+            "indicateur": {"type": "text"},
+            "departement": {"type": "text"},
+            "sousprefecture": {"type": "text"},
+            "annee": {"type": "text"},
+            "definitions":{"type":"text"}
+        }
+    }
+}
+
+
+# Vérifier si l'index n'existe pas, puis le créer
+if not es.indices.exists(index=index_name):
+    es.indices.create(index=index_name, body=mapping)
+    print(f"L'index '{index_name}' a été créé.")
+else:
+    print(f"L'index '{index_name}' existe déjà.")
+
+
+def index_data_from_excel():
+    # Lire le fichier Excel
+    data = pd.read_excel('data_combined.xlsx')
+
+    # Vérifie si les données sont récupérées correctement
+    if data.empty:
+        print("Aucune donnée récupérée du fichier Excel.")
+    else:
+        print(f"{len(data)} lignes récupérées depuis Excel.")
+
+    # Nettoyer les données (remplacer les NaN par des chaînes vides)
+    data = data.fillna('')
+
+    # Indexer chaque ligne du fichier Excel
+    for _, row in data.iterrows():
+        document = row.to_dict()  # Convertir la ligne en dictionnaire
+        print("Document à indexer:", document)  # Debug: affiche le document
+
+        # Essayer d'indexer le document
+        try:
+            es.index(index=index_name, body=document)
+            print(f"Indexing: {document}")
+        except Exception as e:
+            print(f"Erreur d'indexation pour le document {document}: {e}")
+
+    print("Données indexées avec succès.")
+
+
+
+
+# Fonction de recherche Elasticsearch
+def search_data(query):
+    search_result = es.search(index=index_name, body={
+        "query": {
+            "multi_match": {
+                "query": query,
+                "fields": ["region", "indicateur", "departement", "sousprefecture", "annee","definitions"]
+            }
+        }
+    })
+    return search_result['hits']['hits']
+
+# Routes Flask
+@app.route('/mot')
+def rindex():
+    return render_template('rindex.html')
+
+@app.route('/search', methods=['GET', 'POST'])
+def search():
+    query = request.form.get('query')
+    if query:
+        # Prépare la requête de recherche simple
+        body = {
+            "size": 100,
+            "query": {
+                "multi_match": {
+                    "query": query,
+                    "fields": ["region", "indicateur", "departement", "sousprefecture", "annee","definitions"],
+                    "fuzziness": "AUTO"
+                }
+            }
+        }
+        
+        # Effectue la recherche
+        search_result = es.search(index=index_name, body=body)
+        hits = search_result['hits']['hits']
+        
+        # Utilisation d'un set pour éviter les doublons
+        unique_results = []
+        seen = set()
+        
+        for hit in hits:
+            # Créer un tuple unique pour chaque combinaison de valeurs
+            unique_key = (
+                hit['_source']['region'], 
+                hit['_source']['indicateur'], 
+                hit['_source']['departement'], 
+                hit['_source']['sousprefecture'], 
+                hit['_source']['annee']
+            )
+            
+            # Vérifier si cette combinaison existe déjà dans 'seen'
+            if unique_key not in seen:
+                unique_results.append(hit)
+                seen.add(unique_key)
+
+        return render_template('resultats.html', results=unique_results, query=query)
+    
+    return render_template('rindex.html')
+
+es.indices.put_settings(index='requete_elastic', body={
+    "index.blocks.read_only_allow_delete": None
+})
+
+#index_data_from_excel()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

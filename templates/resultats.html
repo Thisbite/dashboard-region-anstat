@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moteur de Recherche</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/resultats.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Recherche dans les Indicateurs</h1>
+        <form method="POST">
+            <input type="text" name="query" placeholder="Entrez votre recherche..." required>
+            <button type="submit">Rechercher</button>
+        </form>
+        {% if results %}
+            <h2>Résultats de la recherche</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Région</th>
+                        <th>Indicateur</th>
+                        <th>Département</th>
+                        <th>Sous-préfecture</th>
+                        <th>Année</th>
+                    </tr>
+                </thead>
+           
+                    {% for hit in results %}
+                        <tr>
+                            <td>{{ hit['_source']['region'] }}</td>
+                            <td>
+                               
+                                <a href="{{ url_for('dashboard', region=region) }}"> {{ hit['_source']['indicateur'] }}</a>
+                            </td>
+                            <td>{{ hit['_source']['departement'] }}</td>
+                            <td>{{ hit['_source']['sousprefecture'] }}</td>
+                            <td>{{ hit['_source']['annee'] }}</td>
+                        </tr>
+                    {% endfor %}
+        
+            </table>
+        {% else %}
+            <p>Aucun résultat trouvé.</p>
+        {% endif %}
+    </div>
+</body>
+</html>
