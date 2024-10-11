@@ -15,6 +15,7 @@ import random
 import time
 from datetime import datetime
 import mysql.connector
+from unidecode import unidecode
 #https://colab.research.google.com/drive/1oBqwcSMb4YTrn0NFUiQzJCiZ65uIay_S?hl=fr#scrollTo=CJAQGVAWNNPw
 #brew services restart elastic/tap/elasticsearch-full
 app = Flask(__name__)
@@ -60,14 +61,13 @@ mapping = {
 # Supprimer l'index s'il existe
 
 # Supprimer l'index s'il existe
+
+
 """
 if es.indices.exists(index=index_name):
     es.indices.delete(index=index_name)
     print(f"L'index '{index_name}' a été supprimé.")
 """
-
-
-
 
 # Vérifier si l'index n'existe pas, puis le créer
 if not es.indices.exists(index=index_name):
@@ -79,7 +79,7 @@ else:
 
 def index_data_from_excel():
     # Lire le fichier Excel
-    data = pd.read_excel('data_merged.xlsx')
+    data = pd.read_excel('data.xlsx')
 
     # Vérifie si les données sont récupérées correctement
     if data.empty:
@@ -113,6 +113,9 @@ def index_data_from_excel():
 @app.route('/search', methods=['GET', 'POST'])
 def search():
     query = request.form.get('query')
+    query=unidecode(query)
+    
+
     if query:
         # Prépare la requête de recherche pour chercher des termes correspondants ou des préfixes dans 'definitions'
         body = {
