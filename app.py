@@ -56,13 +56,17 @@ mapping = {
     }
 }
 
-""" 
+
 # Supprimer l'index s'il existe
+
+# Supprimer l'index s'il existe
+"""
 if es.indices.exists(index=index_name):
     es.indices.delete(index=index_name)
     print(f"L'index '{index_name}' a été supprimé.")
-
 """
+
+
 
 
 # Vérifier si l'index n'existe pas, puis le créer
@@ -103,30 +107,41 @@ def index_data_from_excel():
 
     print("Données indexées avec succès.")
 
-
-
-
+#index_data_from_excel()
+#index_data_from_excel()
 #
 @app.route('/search', methods=['GET', 'POST'])
 def search():
     query = request.form.get('query')
     if query:
-        # Prépare la requête de recherche pour chercher des termes exacts dans 'definitions'
+        # Prépare la requête de recherche pour chercher des termes correspondants ou des préfixes dans 'definitions'
         body = {
             "size": 100,
             "query": {
                 "bool": {
-                    "must": [
+                    "should": [
                         {
-                            "term": {
-                                "definitions": query.lower()  # correspondance exacte avec le champ 'definitions'
+                            "wildcard": {
+                                "definitions": {
+                                    "value": f"{query.lower()}*",  # Recherche qui correspond aux termes commençant par 'query'
+                                    "case_insensitive": True      # Rend la recherche insensible à la casse
+                                }
+                            }
+                        },
+                        {
+                            "match": {
+                                "definitions": {
+                                    "query": query.lower(),
+                                    "fuzziness": "AUTO",  # Utilise la correspondance floue pour les fautes de frappe
+                                    "prefix_length": 2    # Deux premiers caractères exacts avant d'appliquer la fuzziness
+                                }
                             }
                         }
                     ]
                 }
             }
         }
-        
+
         # Effectue la recherche
         search_result = es.search(index=index_name, body=body)
         hits = search_result['hits']['hits']
@@ -158,11 +173,9 @@ def search():
 
 
 
-
 es.indices.put_settings(index='requete_elastic', body={
     "index.blocks.read_only_allow_delete": None
 })
-
 #index_data_from_excel()
 
 
