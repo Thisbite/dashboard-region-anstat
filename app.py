@@ -56,6 +56,14 @@ mapping = {
     }
 }
 
+""" 
+# Supprimer l'index s'il existe
+if es.indices.exists(index=index_name):
+    es.indices.delete(index=index_name)
+    print(f"L'index '{index_name}' a été supprimé.")
+
+"""
+
 
 # Vérifier si l'index n'existe pas, puis le créer
 if not es.indices.exists(index=index_name):
@@ -67,7 +75,7 @@ else:
 
 def index_data_from_excel():
     # Lire le fichier Excel
-    data = pd.read_excel('data_combined.xlsx')
+    data = pd.read_excel('data_merged.xlsx')
 
     # Vérifie si les données sont récupérées correctement
     if data.empty:
@@ -77,6 +85,9 @@ def index_data_from_excel():
 
     # Nettoyer les données (remplacer les NaN par des chaînes vides)
     data = data.fillna('')
+
+    # Convertir toutes les valeurs en minuscules
+    data = data.applymap(lambda x: x.lower() if isinstance(x, str) else x)
 
     # Indexer chaque ligne du fichier Excel
     for _, row in data.iterrows():
@@ -95,35 +106,23 @@ def index_data_from_excel():
 
 
 
-# Fonction de recherche Elasticsearch
-def search_data(query):
-    search_result = es.search(index=index_name, body={
-        "query": {
-            "multi_match": {
-                "query": query,
-                "fields": ["region", "indicateur", "departement", "sousprefecture", "annee","definitions"]
-            }
-        }
-    })
-    return search_result['hits']['hits']
-
-# Routes Flask
-@app.route('/mot')
-def rindex():
-    return render_template('rindex.html')
-
+#
 @app.route('/search', methods=['GET', 'POST'])
 def search():
     query = request.form.get('query')
     if query:
-        # Prépare la requête de recherche simple
+        # Prépare la requête de recherche pour chercher des termes exacts dans 'definitions'
         body = {
             "size": 100,
             "query": {
-                "multi_match": {
-                    "query": query,
-                    "fields": ["region", "indicateur", "departement", "sousprefecture", "annee","definitions"],
-                    "fuzziness": "AUTO"
+                "bool": {
+                    "must": [
+                        {
+                            "term": {
+                                "definitions": query.lower()  # correspondance exacte avec le champ 'definitions'
+                            }
+                        }
+                    ]
                 }
             }
         }
@@ -154,6 +153,11 @@ def search():
         return render_template('resultats.html', results=unique_results, query=query)
     
     return render_template('rindex.html')
+
+
+
+
+
 
 es.indices.put_settings(index='requete_elastic', body={
     "index.blocks.read_only_allow_delete": None

@@ -1,4 +1,5 @@
 folium
 plotly
  PyPDF2
+ elasticsearch
 
