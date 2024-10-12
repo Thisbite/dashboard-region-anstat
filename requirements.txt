@@ -1,5 +1,6 @@
 folium
 plotly
- PyPDF2
- elasticsearch
+PyPDF2
+elasticsearch
+unidecode
 

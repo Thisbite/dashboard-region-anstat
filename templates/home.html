@@ -27,9 +27,16 @@
 
         <!-- Formulaire de recherche -->
         <div class="search-bar">
-            <form action="{{ url_for('request_indicateur') }}" method="GET">
-                <input type="text" id="indicateur-search2" name="indicateur2" placeholder="Recherche indicateur par mot clé..." required>
+            <!--Utilisation de recherche
+     
+            <form action="{{ url_for('request_indicateur' ) }}" method="GET">
+                <input type="text" id="indicateur-search2" name="indicateur2" placeholder="Recherche indicateur..." required>
                 <button type="submit">Chercher</button>
+            </form>
+            -->
+            <form method="POST" action="{{ url_for('search') }}">
+                <input type="text" name="query" placeholder="Entrez votre recherche..." required>
+                <button type="submit">Rechercher</button>
             </form>
         </div>
     </div>

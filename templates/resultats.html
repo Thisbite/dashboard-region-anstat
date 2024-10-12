@@ -13,36 +13,58 @@
             <input type="text" name="query" placeholder="Entrez votre recherche..." required>
             <button type="submit">Rechercher</button>
         </form>
+        
+        <div id="loading" style="display:none;">Chargement...</div> 
         {% if results %}
             <h2>Résultats de la recherche</h2>
             <table>
                 <thead>
                     <tr>
-                        <th>Région</th>
+                       
                         <th>Indicateur</th>
-                        <th>Département</th>
-                        <th>Sous-préfecture</th>
-                        <th>Année</th>
+                        <th>Sous domaine</th>
+                        <th>Définition de l'indicateur</th>
+                        <th>Mode calcul</th>
+                        <th>Mode de collecte</th>
                     </tr>
                 </thead>
-           
+                <tbody>
                     {% for hit in results %}
                         <tr>
-                            <td>{{ hit['_source']['region'] }}</td>
-                            <td>
-                               
-                                <a href="{{ url_for('dashboard', region=region) }}"> {{ hit['_source']['indicateur'] }}</a>
-                            </td>
-                            <td>{{ hit['_source']['departement'] }}</td>
-                            <td>{{ hit['_source']['sousprefecture'] }}</td>
-                            <td>{{ hit['_source']['annee'] }}</td>
+                           
+                            <td><a href="{{ url_for('request_indicateur', region=hit['_source']['region'] ,indicateur_elastic=hit['_source']['indicateur'] ) }}">{{ hit['_source']['indicateur'] }}</a></td>
+                            <td>{{ hit['_source']['Sous_domaine'] }}</td>
+                            <td>{{ hit['_source']['Definition'] }}</td>
+                            <td>{{ hit['_source']['Mode_de_calcul'] }}</td>
+                            <td>{{ hit['_source']['Mode_de_collecte'] }}</td>
                         </tr>
                     {% endfor %}
-        
+                </tbody>
             </table>
+            
+            <!-- Pagination -->
+           <!-- Pagination -->
+        <div class="pagination">
+            {% if page > 1 %}
+                <a href="{{ url_for('search', query=query, page=page-1) }}">Précédent</a>
+            {% endif %}
+            
+            <span>Page {{ page }} sur {{ total_pages }}</span>
+
+            {% if page < total_pages %}
+                <a href="{{ url_for('search', query=query, page=page+1) }}">Suivant</a>
+            {% endif %}
+        </div>
+
         {% else %}
-            <p>Aucun résultat trouvé.</p>
+            <p>Aucun résultat trouvé. Essayez d'affiner votre recherche.</p>
         {% endif %}
     </div>
+
+    <script>
+        document.querySelector('form').addEventListener('submit', function() {
+            document.getElementById('loading').style.display = 'block';
+        });
+    </script>
 </body>
 </html>

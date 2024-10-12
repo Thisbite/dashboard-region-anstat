@@ -16,59 +16,49 @@ import time
 from datetime import datetime
 import mysql.connector
 from unidecode import unidecode
+import pandas as pd
+from io import StringIO
 #https://colab.research.google.com/drive/1oBqwcSMb4YTrn0NFUiQzJCiZ65uIay_S?hl=fr#scrollTo=CJAQGVAWNNPw
 #brew services restart elastic/tap/elasticsearch-full
 app = Flask(__name__)
-
 # Configuration du logger pour le débogage
 logging.basicConfig(level=logging.DEBUG)
-
 # Configuration de la clé secrète pour les sessions Flask
 app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY')
-
+app.secret_key = os.urandom(24)
 # Configuration de la base de données
 app.config['SQLALCHEMY_DATABASE_URI'] = (
     f"mysql+pymysql://{os.getenv('MYSQL_USER', 'root')}:{os.getenv('MYSQL_PASSWORD', '')}@"
     f"{os.getenv('MYSQL_HOST', 'localhost')}/{os.getenv('MYSQL_DATABASE', 'mydatabase')}"
 )
-
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialisation de la base de données et de la migration
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
+#import de elastic
 es=cf.es
-import pandas as pd
-from elasticsearch import Elasticsearch
-
-
-# Supprimer l'index s'il existe, puis le recréer
+#Mapper les colonnes 
 index_name = 'requete_elastic'
 mapping = {
     "mappings": {
         "properties": {
-            "region": {"type": "text"},
+            "Sous_domaine": {"type": "text"},
             "indicateur": {"type": "text"},
-            "departement": {"type": "text"},
-            "sousprefecture": {"type": "text"},
-            "annee": {"type": "text"},
-            "definitions":{"type":"text"}
+            "Mode_de_collecte": {"type": "text"},
+            "Mode_de_calcul": {"type": "text"},
+            "Definition": {"type": "text"},
+            "mot_cles":{"type":"text"}
         }
     }
 }
-
-
 # Supprimer l'index s'il existe
-
-# Supprimer l'index s'il existe
-
-
 """
 if es.indices.exists(index=index_name):
     es.indices.delete(index=index_name)
     print(f"L'index '{index_name}' a été supprimé.")
-"""
-
+"""    
+    
 # Vérifier si l'index n'existe pas, puis le créer
 if not es.indices.exists(index=index_name):
     es.indices.create(index=index_name, body=mapping)
@@ -77,9 +67,10 @@ else:
     print(f"L'index '{index_name}' existe déjà.")
 
 
+#Importer le fichier  excel _______________________________Excel
 def index_data_from_excel():
     # Lire le fichier Excel
-    data = pd.read_excel('data.xlsx')
+    data = pd.read_excel('lexique.xlsx')
 
     # Vérifie si les données sont récupérées correctement
     if data.empty:
@@ -92,12 +83,10 @@ def index_data_from_excel():
 
     # Convertir toutes les valeurs en minuscules
     data = data.applymap(lambda x: x.lower() if isinstance(x, str) else x)
-
     # Indexer chaque ligne du fichier Excel
     for _, row in data.iterrows():
         document = row.to_dict()  # Convertir la ligne en dictionnaire
         print("Document à indexer:", document)  # Debug: affiche le document
-
         # Essayer d'indexer le document
         try:
             es.index(index=index_name, body=document)
@@ -112,31 +101,33 @@ def index_data_from_excel():
 #
 @app.route('/search', methods=['GET', 'POST'])
 def search():
-    query = request.form.get('query')
-    query=unidecode(query)
+    query = request.form.get('query') or request.args.get('query')  # Récupère 'query' de POST ou GET
+    page = int(request.args.get('page', 1))  # Récupère le numéro de page à partir des arguments de l'URL
     
-
     if query:
+        query = unidecode(query)  # Ne s'exécute que si query n'est pas None
+        
         # Prépare la requête de recherche pour chercher des termes correspondants ou des préfixes dans 'definitions'
         body = {
-            "size": 100,
+            "from": (page - 1) * 10,  # Définit l'offset pour la pagination (10 résultats par page)
+            "size": 10,  # Limite le nombre de résultats par page à 10
             "query": {
                 "bool": {
                     "should": [
                         {
                             "wildcard": {
-                                "definitions": {
-                                    "value": f"{query.lower()}*",  # Recherche qui correspond aux termes commençant par 'query'
-                                    "case_insensitive": True      # Rend la recherche insensible à la casse
+                                "mot_cles": {
+                                    "value": f"{query.lower()}*",
+                                    "case_insensitive": True
                                 }
                             }
                         },
                         {
                             "match": {
-                                "definitions": {
+                                "mot_cles": {
                                     "query": query.lower(),
-                                    "fuzziness": "AUTO",  # Utilise la correspondance floue pour les fautes de frappe
-                                    "prefix_length": 2    # Deux premiers caractères exacts avant d'appliquer la fuzziness
+                                    "fuzziness": "AUTO",
+                                    "prefix_length": 2
                                 }
                             }
                         }
@@ -154,25 +145,24 @@ def search():
         seen = set()
         
         for hit in hits:
-            # Créer un tuple unique pour chaque combinaison de valeurs
             unique_key = (
-                hit['_source']['region'], 
+              
                 hit['_source']['indicateur'], 
-                hit['_source']['departement'], 
-                hit['_source']['sousprefecture'], 
-                hit['_source']['annee']
+             
+                #hit['_source']['annee']
             )
-            
-            # Vérifier si cette combinaison existe déjà dans 'seen'
             if unique_key not in seen:
                 unique_results.append(hit)
                 seen.add(unique_key)
 
-        return render_template('resultats.html', results=unique_results, query=query)
-    
+        total_results = search_result['hits']['total']['value']  # Récupère le nombre total de résultats
+        total_pages = (total_results + 9) // 10  # Calcul du nombre total de pages
+        
+        return render_template('resultats.html', results=unique_results, query=query, page=page, total_pages=total_pages)
+
     return render_template('rindex.html')
 
-
+#index_data_from_excel()
 
 
 
@@ -469,13 +459,10 @@ def show_region_pdf(region):
 def autocomplete_indicateur():
     term = request.args.get('term', '')
     indicateurs_options = qr.options_indicateur()
-    
     # Simuler une liste d'indicateurs (à remplacer par une vraie requête de base de données)
     indicateurs = indicateurs_options
-    
     # Filtrer la liste en fonction du terme de recherche
     results = [{'label': ind, 'value': ind} for ind in indicateurs if term.lower() in ind.lower()]
-    
     return jsonify(results)
 
 
@@ -508,41 +495,52 @@ def get_sous_prefectures():
 def request_indicateur():
     # Charger les données depuis MySQL
     df = qr.get_data_from_mysql()
-
-    # Récupérer l'indicateur passé en paramètre dans l'URL
-    indicateur2 = request.args.get('indicateur2')
-
+    
     # Obtenir les options pour chaque filtre (indicateur, région, etc.)
     indicateurs_options = qr.options_indicateur()
-    print("Indicateur 2:", indicateur2)
 
+    # Initialiser les filtres par défaut
+    region_SELECT = None
+    departement_SELECT = None
+    sousprefecture_SELECT = None
+    indicateur_SELECT = None
+
+    # Logique pour POST (lorsque l'utilisateur soumet un formulaire)
     if request.method == 'POST':
         # Récupérer les sélections de l'utilisateur
-        indicateur_SELECT = request.args.get('indicateur2')  # ou request.form.get selon ton besoin
         region_SELECT = request.form.get('region')
         departement_SELECT = request.form.get('departement')
         sousprefecture_SELECT = request.form.get('sous_prefecture')
+        indicateur_SELECT = request.form.get('indicateur_elastic')
 
-        # Commencer avec l'ensemble complet des données
+        print(f"POST - Région: {region_SELECT}, Département: {departement_SELECT}, Sous-préfecture: {sousprefecture_SELECT}, Indicateur: {indicateur_SELECT}")
+
+    # Logique pour GET (lorsqu'un paramètre est passé dans l'URL)
+    if request.method == 'GET':
+        indicateur_SELECT = request.args.get('indicateur_elastic')
+
+        print(f"GET - Indicateur: {indicateur_SELECT}")
+
+        # Appliquer les filtres (indicateur, région, etc.)
         df_filtered = df.drop(columns=['statut_approbation', 'id'], errors='ignore')
 
-        # Appliquer les filtres en fonction des sélections
+
         if indicateur_SELECT and 'indicateur' in df_filtered.columns:
             df_filtered = df_filtered[df_filtered['indicateur'].str.strip().str.lower() == indicateur_SELECT.strip().lower()]
-            print("Indicateur sélectionné:", indicateur_SELECT)
+            print(f"Indicateur sélectionné: {indicateur_SELECT}")
 
         if not df_filtered.empty and region_SELECT and 'region' in df_filtered.columns:
             df_filtered = df_filtered[df_filtered['region'] == region_SELECT]
-            print("Région sélectionnée:", region_SELECT)
+            print(f"Région sélectionnée: {region_SELECT}")
 
         if not df_filtered.empty and departement_SELECT and 'departement' in df_filtered.columns:
             df_filtered = df_filtered[df_filtered['departement'] == departement_SELECT]
-            print("Département sélectionné:", departement_SELECT)
+            print(f"Département sélectionné: {departement_SELECT}")
 
         if not df_filtered.empty and sousprefecture_SELECT and 'sousprefecture' in df_filtered.columns:
             df_filtered = df_filtered[df_filtered['sousprefecture'] == sousprefecture_SELECT]
             df_filtered = df_filtered.drop(columns=['region', 'departement'], errors='ignore')
-            print("Sous-préfecture sélectionnée:", sousprefecture_SELECT)
+            print(f"Sous-préfecture sélectionnée: {sousprefecture_SELECT}")
 
         # Supprimer les colonnes contenant uniquement des NaN
         df_filtered = df_filtered.dropna(axis=1, how='all')
@@ -563,11 +561,8 @@ def request_indicateur():
             message = "Aucune donnée disponible après le filtrage."
             return render_template('result.html', available_columns=[], message=message)
         else:
-            # Afficher les données filtrées
-            print(df_filtered.head())
-
             # Stocker le DataFrame filtré dans la session au format JSON
-            from io import StringIO
+        
             df_filtered_json = StringIO()
             df_filtered.to_json(df_filtered_json)
             session['df_filtered'] = df_filtered_json.getvalue()
@@ -582,10 +577,9 @@ def request_indicateur():
 
             # Afficher la page résultat avec les colonnes disponibles
             return render_template('result.html', available_columns=available_columns, 
-                                   indicateur_SELECT=indicateur_SELECT,
-                                   defintions=defintions,
-                                   mode_calcul=mode_calcul)
-
+                                indicateur_SELECT=indicateur_SELECT,
+                                defintions=defintions,
+                                mode_calcul=mode_calcul)
 
     # Si GET, afficher la page de sélection avec les options de filtre
     regions = df['region'].dropna().sort_values().unique()
@@ -598,7 +592,7 @@ def request_indicateur():
         regions=regions,
         departements=departements,
         sous_prefectures=sous_prefectures,
-        indicateur2=indicateur2
+        indicateur2=indicateur_SELECT
     )
 
 
