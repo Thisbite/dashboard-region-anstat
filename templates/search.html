@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/search.css') }}">
+    <title>Moteur de Recherche</title>
+</head>
+<body>
+
+    <div class="header-secondary">
+        <div class="nav-links">
+            <a href="{{ url_for('list_regions') }}">Statistiques</a>
+            <a href="{{ url_for('search_boostrap') }}">Requête</a>
+            <a href="{{ url_for('domaines') }}">Domaines</a>
+            <a href="#connexion">Aide</a>
+        </div>
+
+        <!-- Formulaire de recherche -->
+        <div class="search-bar">
+            <!--Utilisation de recherche
+     
+            <form action="{{ url_for('request_indicateur' ) }}" method="GET">
+                <input type="text" id="indicateur-search2" name="indicateur2" placeholder="Recherche indicateur..." required>
+                <button type="submit">Chercher</button>
+            </form>
+            -->
+            <form method="POST" action="{{ url_for('search_boostrap') }}">
+                <input type="text" name="query" placeholder="Entrez votre recherche..." required>
+                <button type="submit">Rechercher</button>
+            </form>
+
+      <!-- Barre de flash infos -->
+    
+    </div>
+  
+    </div>
+
+    
+    
+    
+<div class="container">
+        <h1>Recherche d'indicateur</h1>
+        <form method="POST" action="/search">
+            <input type="text" name="query" placeholder="Entrez votre recherche..." required>
+            <button type="submit">Rechercher</button>
+        </form>
+    </div>
+</body>
+</html>

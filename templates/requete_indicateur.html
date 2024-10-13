@@ -3,160 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Requête Indicateur</title>
+    <title>Résultat de l'Indicateur</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/request_indicateur.css') }}">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
-    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <style>
+        /* Style basique pour les listes déroulantes */
+        select {
+            width: 100%;
+            padding: 5px;
+            box-sizing: border-box;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        th {
+            background-color: #f2f2f2;
+            text-align: left;
+        }
+    </style>
 </head>
 <body>
-    <div class="header-secondary">
-        <div class="nav-links">
-            <a href="{{ url_for('list_regions') }}">Statistiques</a>
-            <a href="{{ url_for('domaines') }}">Domaines</a>
-            <a href="#apropos">A propos</a>
-            <a href="#connexion">Guide utilisateur</a>
-        </div>
-    </div>
-
     <div class="container">
-        <h1>Définir la zone géographie</h1>
+        <h1> {{ indicateur2 }}</h1>
 
-        <form method="POST" class="filter-form">
-            <!-- Cadre pour la recherche d'indicateur avec autocomplétion -->
-            <div class="frame">
-               
-                <input type="hidden"id="indicateur-search" value="{{ indicateur2 }}" placeholder="Saisir un mot clé pour l'indicateur..." required>
-                <input type="hidden" name="indicateur" id="indicateur">
-            </div>
-            
-            <!-- Cadre pour la sélection de la région -->
-            <div class="frame">
-                <p><strong>NB :</strong> Absence d'une entité géographique signifie pas de données disponible à ce niveau... </p>
-                <label for="region">Région :</label>
-                <select name="region" id="region" onchange="loadDepartements()" disabled required>
-                    <option value="">Sélectionner la région</option>
-                </select>
-            </div>
-
-            <!-- Cadre pour la sélection du département -->
-            <div class="frame">
-                <label for="departement">Département :</label>
-                <select name="departement" id="departement" onchange="loadSousPrefectures()" disabled>
-                    <option value="">Sélectionner le département</option>
-                </select>
-            </div>
-
-            <!-- Cadre pour la sélection de la sous-préfecture -->
-            <div class="frame">
-                <label for="sous_prefecture">Sous-préfecture :</label>
-                <select name="sous_prefecture" id="sous_prefecture" disabled>
-                    <option value="">Sélectionner la sous-préfecture</option>
-                </select>
-            </div>
-
-            <!-- Bouton de recherche -->
-            <div class="frame">
-                <button type="submit" name="recherche" value="true" class="btn-recherche">Recherche</button>
-            </div>
-        </form>
-
-        <!-- Affichage des messages Flash en cas d'erreur -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <ul class="flash-messages">
-                    {% for category, message in messages %}
-                        <li class="{{ category }}">{{ message }}</li>
+        <!-- Table des résultats filtrés avec listes déroulantes dans l'en-tête -->
+        <table id="filterTable">
+            <thead>
+                <tr>
+                    <!-- Générer l'en-tête du tableau avec les listes déroulantes -->
+                    {% for col in df_filtered.columns %}
+                    <th>
+                        {{ col }}
+                        <br>
+                        <select onchange="filterTable()">
+                            <option value="">--Sélectionner--</option>
+                            <!-- Générer les options de la liste déroulante avec les valeurs uniques de la colonne -->
+                            {% set unique_values = df_filtered.data|map(attribute=loop.index0)|unique %}
+                            {% for value in unique_values %}
+                                <option value="{{ value }}">{{ value }}</option>
+                            {% endfor %}
+                        </select>
+                    </th>
                     {% endfor %}
-                </ul>
-            {% endif %}
-        {% endwith %}
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Boucle pour afficher les données de chaque ligne -->
+                {% for row in df_filtered.data %}
+                <tr>
+                    {% for cell in row %}
+                    <td>{{ cell }}</td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 
     <script>
-        $(document).ready(function() {
-            // Appeler la fonction pour charger les régions dès que la page est chargée
-            loadRegions();
+    // Fonction de filtrage par colonne basée sur la sélection des listes déroulantes
+    function filterTable() {
+        const table = document.getElementById('filterTable');
+        const rows = table.getElementsByTagName('tr');
+        const filters = [];
+
+        // Récupérer les valeurs sélectionnées de toutes les listes déroulantes
+        const selects = document.querySelectorAll('thead select');
+        selects.forEach(select => {
+            filters.push(select.value.toLowerCase());
         });
 
-        // Fonction pour charger les régions en fonction de l'indicateur sélectionné
-        function loadRegions() {
-            const indicateur = document.getElementById('indicateur-search').value;
-            const regionSelect = document.getElementById('region');
-            
-            // Réinitialiser les régions
-            regionSelect.innerHTML = '<option value="">Sélectionner une région</option>';
-    
-            if (indicateur) {
-                fetch(`/get_regions?indicateur=${indicateur}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        regionSelect.disabled = false;
-                        data.forEach(region => {
-                            const option = document.createElement('option');
-                            option.value = region;
-                            option.text = region;
-                            regionSelect.appendChild(option);
-                        });
-                    });
-            } else {
-                regionSelect.disabled = true;
+        // Boucle à travers chaque ligne du tableau (sauter l'en-tête)
+        for (let i = 1; i < rows.length; i++) {
+            const cells = rows[i].getElementsByTagName('td');
+            let shouldDisplay = true;
+
+            // Vérifier chaque colonne pour voir si la valeur de la cellule correspond à la sélection
+            for (let colIndex = 0; colIndex < filters.length; colIndex++) {
+                const cell = cells[colIndex];
+                if (cell) {
+                    const textValue = cell.textContent || cell.innerText;
+
+                    // Si le filtre est vide, afficher la ligne si la cellule est vide
+                    if (filters[colIndex] === "") {
+                        // Afficher la ligne si la cellule est vide ou si le filtre est vide
+                        if (textValue.trim() === "") {
+                            continue; // Afficher la ligne si la cellule est vide
+                        }
+                    } else if (textValue.toLowerCase() !== filters[colIndex]) {
+                        shouldDisplay = false; // Si une colonne ne correspond pas, ne pas afficher la ligne
+                        break; // Sortir de la boucle si une colonne ne correspond pas
+                    }
+                }
             }
+
+            // Afficher ou masquer la ligne en fonction des correspondances
+            rows[i].style.display = shouldDisplay ? "" : "none";
         }
-
-        // Fonction pour charger les départements en fonction de la région
-        function loadDepartements() {
-            const region = document.getElementById('region').value;
-            const departementSelect = document.getElementById('departement');
-            const sousPrefectureSelect = document.getElementById('sous_prefecture');
-
-            // Réinitialiser le département et la sous-préfecture
-            departementSelect.innerHTML = '<option value="">Sélectionner un département</option>';
-            sousPrefectureSelect.innerHTML = '<option value="">Sélectionner une sous-préfecture</option>';
-            sousPrefectureSelect.disabled = true;
-
-            if (region) {
-                fetch(`/get_departements?region=${region}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        departementSelect.disabled = false;
-                        data.forEach(departement => {
-                            const option = document.createElement('option');
-                            option.value = departement;
-                            option.text = departement;
-                            departementSelect.appendChild(option);
-                        });
-                    });
-            } else {
-                departementSelect.disabled = true;
-                sousPrefectureSelect.disabled = true;
-            }
-        }
-
-        // Fonction pour charger les sous-préfectures en fonction du département
-        function loadSousPrefectures() {
-            const departement = document.getElementById('departement').value;
-            const sousPrefectureSelect = document.getElementById('sous_prefecture');
-
-            // Réinitialiser la sous-préfecture
-            sousPrefectureSelect.innerHTML = '<option value="">Sélectionner une sous-préfecture</option>';
-
-            if (departement) {
-                fetch(`/get_sous_prefectures?departement=${departement}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        sousPrefectureSelect.disabled = false;
-                        data.forEach(sousPrefecture => {
-                            const option = document.createElement('option');
-                            option.value = sousPrefecture;
-                            option.text = sousPrefecture;
-                            sousPrefectureSelect.appendChild(option);
-                        });
-                    });
-            } else {
-                sousPrefectureSelect.disabled = true;
-            }
-        }
+    }
     </script>
 </body>
 </html>

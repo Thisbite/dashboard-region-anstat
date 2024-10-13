@@ -3,134 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Résultats</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/result.css') }}">
-  
+    <title>Résultat de l'Indicateur</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-    <div class="header-secondary">
-        <div class="nav-links">
-            <a href="{{ url_for('list_regions') }}">Statistiques</a>
-            <a href="{{ url_for('domaines') }}">Domaines</a>
-            <a href="#apropos">A propos</a>
-            <a href="#connexion">Guide utilisateur</a>
-        </div>
+    <div class="container">
+        <h1>Résultat pour l'indicateur : {{ indicateur2 }}</h1>
+        
+        <!-- Table des résultats filtrés -->
+        <table>
+            <thead>
+                <tr>
+                    <!-- Générer l'en-tête du tableau dynamiquement -->
+                    {% for col in df_filtered.columns %}
+                    <th>{{ col }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Boucle pour afficher les données de chaque ligne -->
+                {% for row in df_filtered.values %}
+                <tr>
+                    {% for cell in row %}
+                    <td>{{ cell }}</td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
- 
-    <div class="parent-frame">
-    <!-- Liste des colonnes disponibles à glisser -->
-    <div class="frame">
-        <h3>{{indicateur_SELECT}}</h3>
-        <p><strong>Définitions de l'indicateur :</strong> <span>{{defintions}}</span></p>
-        <p><strong>Mode de calcul :</strong> <span>{{mode_calcul}}</span></p>
-    </div>
-
-    <!-- Zone de dépôt pour créer le tableau croisé dynamique -->
-    <div class="frame">
-        <h3>Variables Collectées</h3>
-        <div id="available-columns">
-            {% for col in available_columns %}
-                <div class="draggable" draggable="true">{{ col }}</div>
-            {% endfor %}
-        </div>
-        <p>Pour chaque variable sélectionnée, faites glisser dans la section ci-dessous</p>
-        <div id="dropzone" class="dropzone">
-            <p>Faites glisser vos variables ici</p>
-        </div>
-    </div>
-
-    <!-- Placeholder for dynamically generated pivot table -->
-    <div class="frame">
-        <h3>Résultat</h3>
-        <div id="pivot-result">
-            {% if message %}
-                <p>{{ message }}</p>
-            {% else %}
-                <!-- Afficher le contenu du tableau pivot ici -->
-            {% endif %}
-        </div>
-        <button id="download-btn" class="btn">Télécharger le tableau en Excel</button>
-    </div>
-</div>
-
-    <script>
-        const draggables = document.querySelectorAll('.draggable');
-        const dropzone = document.getElementById('dropzone');
-        const dropzonePlaceholder = dropzone.querySelector('p');
-
-        // Drag & Drop logic
-        draggables.forEach(draggable => {
-            draggable.addEventListener('dragstart', (e) => {
-                e.dataTransfer.setData('text', e.target.textContent);
-            });
-        });
-
-        dropzone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-        });
-
-        dropzone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            const col = e.dataTransfer.getData('text');
-
-            // Remove placeholder if first item is dropped
-            if (dropzonePlaceholder) {
-                dropzonePlaceholder.remove();
-            }
-
-            const columnDiv = document.createElement('div');
-            columnDiv.textContent = col;
-            columnDiv.classList.add('draggable');
-            
-            // Add remove button
-            const removeBtn = document.createElement('span');
-            removeBtn.textContent = '✖';
-            removeBtn.classList.add('remove-btn');
-            removeBtn.onclick = () => {
-                columnDiv.remove();
-                updatePivotTable();
-                if (dropzone.children.length === 0) {
-                    dropzone.appendChild(dropzonePlaceholder);
-                }
-            };
-
-            columnDiv.appendChild(removeBtn);
-            dropzone.appendChild(columnDiv);
-            
-            updatePivotTable();
-        });
-
-        function updatePivotTable() {
-            const selectedColumns = Array.from(dropzone.children)
-                .filter(child => child.classList.contains('draggable'))
-                .map(col => col.firstChild.textContent);  // Exclude remove button
-
-            console.log('Colonnes sélectionnées :', selectedColumns);
-            
-            fetch('/generate_pivot_table', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ columns: selectedColumns })
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log('Données reçues :', data);
-                const resultDiv = document.getElementById('pivot-result');
-                resultDiv.innerHTML = data.table_html;
-            });
-        }
-
-        // Download button event
-        document.getElementById('download-btn').addEventListener('click', () => {
-            const selectedColumns = Array.from(dropzone.children)
-                .filter(child => child.classList.contains('draggable'))
-                .map(col => col.firstChild.textContent);  // Exclude remove button
-
-            // Redirect to download route with selected columns
-            window.location.href = `/download_excel?columns=${selectedColumns.join(',')}`;
-        });
-    </script>
 </body>
 </html>

@@ -1,207 +1,12 @@
-
-
-.header-primary {
-    background-color: #004085;
-    color: white;
-    padding: 20px;
-    text-align: center;
-    font-size: 24px;
-}
-
-.header-secondary {
-    background-color: #f8f9fa;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 20px;
-}
-
-.nav-links {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.nav-links a {
-    text-decoration: none;
-    color: #004085;
-    padding: 10px 20px;
-    font-size: 18px;
-    margin: 0 10px;
-    border-radius: 5px;
-    transition: background-color 0.3s ease;
-}
-
-.nav-links a:hover {
-    background-color: #004085;
-    color: white;
-}
-
-.search-bar {
-    display: flex;
-    align-items: center;
-}
-
-.search-bar input[type="text"] {
-    padding: 8px;
-    font-size: 16px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    width: 200px;
-    margin-right: 10px;
-
-}
-
-.search-bar button {
-    padding: 8px 12px;
-    background-color: #004085;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 16px;
-}
-
-.search-bar button:hover {
-    background-color: #003060;
-}
-/* Form container styling */
-.form-container {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 20px;
-    background-color: #ffffff;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
-}
-
-/* Form heading */
-.form-container h2 {
-    color: #004085;
-    text-align: center;
-    margin-bottom: 20px;
-}
-
-/* Input field styling */
-select, button {
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 15px;
-    border-radius: 5px;
-    border: 1px solid #ccc;
-    font-size: 16px;
-    box-sizing: border-box;
-}
-
-/* Button styling */
-button {
-    background-color: #004085;
-    color: white;
-    border: none;
-    cursor: pointer;
-}
-
-button:hover {
-    background-color: #003366;
-}
-
-/*
-Pour le data list et input
-*/
-/* Style pour le champ de saisie avec une apparence similaire à un select */
-input[type="text"]#indicateur-search {
-    width: 100%; /* Adapter à la largeur souhaitée */
-    padding: 10px; /* Ajouter un peu de padding pour ressembler à un select */
-    font-size: 16px; /* Taille de texte similaire à un select */
-    border: 1px solid #ccc; /* Bordure similaire à un select */
-    border-radius: 4px; /* Ajouter un léger arrondi */
-    background-color: #fff; /* Arrière-plan blanc */
-    appearance: none; /* Supprimer l'apparence par défaut de certains navigateurs */
-    -webkit-appearance: none; /* Pour les navigateurs basés sur Webkit */
-    -moz-appearance: none; /* Pour Firefox */
-    box-sizing: border-box; /* Assurer que le padding soit bien géré */
-}
-
-/* Style pour aligner le champ de saisie avec une icône de flèche, comme un select */
-input[type="text"]#indicateur-search {
-    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 20 20"><path fill="gray" d="M7 10l5 5 5-5H7z"/></svg>');
-    background-repeat: no-repeat;
-    background-position: right 10px center; /* Positionner l'icône à droite */
-    background-size: 12px; /* Ajuster la taille de l'icône */
-    padding-right: 30px; /* Laisser de la place pour l'icône */
-}
-
-/* Style pour la liste des suggestions */
-datalist {
-    border: 1px solid #ccc; /* Bordure similaire à un select */
-    background-color: #fff; /* Fond blanc */
-    font-size: 16px; /* Taille similaire à un select */
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Ajouter une ombre pour le menu */
-}
-
-/* Optionnel : Style personnalisé pour les options suggérées */
-option {
-    padding: 10px;
-    cursor: pointer;
-    font-size: 16px;
-}
-
-
-/* Blue dashed frame for sections */
-.blue-dashed-frame {
-    border: 2px dashed #0c29ff;
-    padding: 15px;
-    margin-bottom: 20px;
-    background-color: #ffffff;
-    border-radius: 5px;
-}
-
-/* Columns styling */
-.columns {
-    display: flex;
-    gap: 20px;
-}
-
-.column {
-    flex: 1;
-}
-
-/* Message styling (success, warning, error) */
-.flash-message {
-    padding: 10px;
-    border-radius: 5px;
-    margin-bottom: 20px;
-}
-
-.flash-success {
-    background-color: #d4edda;
-    border: 1px solid #c3e6cb;
-    color: #155724;
-}
-
-.flash-error {
-    background-color: #f8d7da;
-    border: 1px solid #f5c6cb;
-    color: #721c24;
-}
-
-.flash-warning {
-    background-color: #fff3cd;
-    border: 1px solid #ffeeba;
-    color: #856404;
-}
-
-/* Style global */
 body {
     font-family: Arial, sans-serif;
-    background-color: #f9f9f9;
-    color: #333;
     margin: 0;
     padding: 20px;
+    background-color: #f4f4f4;
 }
 
 .container {
-    max-width: 800px;
+    max-width: 900px;
     margin: 0 auto;
     background-color: #fff;
     padding: 20px;
@@ -209,93 +14,28 @@ body {
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
-/* Style des titres */
 h1 {
     text-align: center;
-    color: #2008d5;
-    margin-bottom: 20px;
+    color: #333;
 }
 
-/* Style des cadres (frames) */
-.frame {
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+th, td {
+    padding: 10px;
+    text-align: left;
     border: 1px solid #ddd;
-    padding: 15px;
-    margin-bottom: 15px;
-    border-radius: 5px;
-    background-color: #f7f7f7;
 }
 
-.frame label {
+th {
+    background-color: #f8f8f8;
     font-weight: bold;
-    display: block;
-    margin-bottom: 5px;
 }
 
-.frame select {
-    width: 100%;
-    padding: 10px;
-    font-size: 16px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+tr:nth-child(even) {
+    background-color: #f9f9f9;
 }
-
-/* Bouton de recherche */
-.btn-recherche {
-    background-color: #380cd7;
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 16px;
-}
-
-.btn-recherche:hover {
-    background-color: #45a049;
-}
-
-/* Messages flash */
-.flash-messages {
-    list-style: none;
-    padding: 0;
-}
-
-.flash-messages li {
-    padding: 10px;
-    margin-bottom: 10px;
-    border-radius: 5px;
-}
-
-.flash-messages li.success {
-    background-color: #dff0d8;
-    color: #3c763d;
-}
-
-.flash-messages li.error {
-    background-color: #f2dede;
-    color: #a94442;
-}
-
-/* 
-Pour la liste de filtre des indicateurs
-*/
-.suggestions-box {
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    max-height: 200px;
-    overflow-y: auto;
-    position: absolute;
-    background-color: white;
-    width: 100%;
-    z-index: 1000;
-}
-
-.suggestion-item {
-    padding: 10px;
-    cursor: pointer;
-}
-
-.suggestion-item:hover {
-    background-color: #f0f0f0;
-}
-

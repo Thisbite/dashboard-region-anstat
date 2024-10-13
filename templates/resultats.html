@@ -4,20 +4,38 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Moteur de Recherche</title>
+  
     <link rel="stylesheet" href="{{ url_for('static', filename='css/resultats.css') }}">
+       <!-- Style -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='asset/css/fresh-bootstrap-table.css') }}">
+        
+
+  <!-- Fonts and icons -->
+  <link href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" rel="stylesheet">
+  <link href="http://fonts.googleapis.com/css?family=Roboto:400,700,300" rel="stylesheet" type="text/css">
 </head>
 <body>
-    <div class="container">
-        <h1>Recherche dans les Indicateurs</h1>
-        <form method="POST">
-            <input type="text" name="query" placeholder="Entrez votre recherche..." required>
-            <button type="submit">Rechercher</button>
-        </form>
+    <div class="header-secondary">
+        <div class="nav-links">
+            <a href="{{ url_for('list_regions') }}">Statistiques</a>
+            <a href="{{ url_for('search_boostrap') }}">Requête</a>
+            <a href="{{ url_for('domaines') }}">Domaines</a>
+            <a href="#connexion">Aide</a>
+        </div>
+
+    </div>
+
+      <!-- Barre de flash infos -->
+  
+    
+    
+    <div class="fresh-table toolbar-color-blue ">
         
         <div id="loading" style="display:none;">Chargement...</div> 
         {% if results %}
-            <h2>Résultats de la recherche</h2>
-            <table>
+           
+            <table id="fresh-table" class="table">
                 <thead>
                     <tr>
                        

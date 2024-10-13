@@ -133,4 +133,36 @@ Transformer le titre
     object-fit: cover; /* Garde le ratio d'aspect et recadre si nécessaire */
 }
 
+/* Marquee peut être personnalisé pour plus d'options */
+marquee {
+    white-space: nowrap;       /* Empêche le texte de passer à la ligne */
+}
+
+.flash-info-bar a {
+    text-decoration: none;  /* Enlève le soulignement */
+    color: inherit;  /* Utilise la même couleur que le texte environnant */
+    font-weight: bold;  /* Rend le texte des liens en gras (optionnel) */
+}
+
+.flash-info-bar {
+  
+    padding: 10px;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    overflow: hidden;
+    border-radius: 8px;
+}
+
+/* Styles pour la barre de flash infos */
+.flash-info-bar {
+    background-color: #007bff; /* Couleur de fond */
+    color: white;               /* Couleur du texte */
+    padding: 10px;             /* Espacement interne */
+    font-size: 16px;           /* Taille de police */
+    font-weight: bold;         /* Texte en gras */
+    position: relative;        /* Pour le positionnement relatif */
+    z-index: 10;               /* Assurer que la barre est au-dessus d'autres éléments */
+}
+
 

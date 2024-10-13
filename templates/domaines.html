@@ -19,11 +19,37 @@
     <div class="header-secondary">
         <div class="nav-links">
             <a href="{{ url_for('list_regions') }}">Statistiques</a>
+            <a href="{{ url_for('search') }}">Requête</a>
             <a href="{{ url_for('domaines') }}">Domaines</a>
-            <a href="#apropos">A propos</a>
-            <a href="#connexion">Guide utilisateur</a>
+            <a href="#connexion">Aide</a>
+        </div>
+
+        <!-- Formulaire de recherche -->
+        <div class="search-bar">
+            <!--Utilisation de recherche
+     
+            <form action="{{ url_for('request_indicateur' ) }}" method="GET">
+                <input type="text" id="indicateur-search2" name="indicateur2" placeholder="Recherche indicateur..." required>
+                <button type="submit">Chercher</button>
+            </form>
+            -->
+            <form method="POST" action="{{ url_for('search') }}">
+                <input type="text" name="query" placeholder="Entrez votre recherche..." required>
+                <button type="submit">Rechercher</button>
+            </form>
         </div>
     </div>
+
+      <!-- Barre de flash infos -->
+      <div class="flash-info-bar">
+        <marquee behavior="scroll" direction="left" scrollamount="5">
+           <a href="https://example.com/natalite">Le taux de natalité a augmenté de 2%</a> en 2024. &nbsp; | &nbsp; 
+          <a href="https://example.com/scolarisation">85% des enfants sont maintenant scolarisés</a>. &nbsp; | &nbsp; 
+         <a href="https://example.com/chomage">Le taux de chômage a chuté à 5%</a>. &nbsp; | &nbsp; 
+        <a href="https://example.com/sante">70% de la population a accès à des soins de santé de base</a>.
+        </marquee>
+    </div>
+    
 
     <div class="container py-5">
         <h1 class="text-center">

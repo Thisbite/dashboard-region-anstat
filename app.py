@@ -18,6 +18,9 @@ import mysql.connector
 from unidecode import unidecode
 import pandas as pd
 from io import StringIO
+from flask import Flask, session
+from flask_session import Session
+import redis
 #https://colab.research.google.com/drive/1oBqwcSMb4YTrn0NFUiQzJCiZ65uIay_S?hl=fr#scrollTo=CJAQGVAWNNPw
 #brew services restart elastic/tap/elasticsearch-full
 app = Flask(__name__)
@@ -25,6 +28,12 @@ app = Flask(__name__)
 logging.basicConfig(level=logging.DEBUG)
 # Configuration de la clé secrète pour les sessions Flask
 app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY')
+app.config['SESSION_TYPE'] = 'redis'
+app.config['SESSION_PERMANENT'] = False
+app.config['SESSION_USE_SIGNER'] = True
+app.config['SESSION_REDIS'] = redis.Redis(host='localhost', port=6379)
+
+Session(app)
 app.secret_key = os.urandom(24)
 # Configuration de la base de données
 app.config['SQLALCHEMY_DATABASE_URI'] = (
@@ -160,7 +169,7 @@ def search():
         
         return render_template('resultats.html', results=unique_results, query=query, page=page, total_pages=total_pages)
 
-    return render_template('rindex.html')
+    return render_template('search.html')
 
 #index_data_from_excel()
 
@@ -285,7 +294,7 @@ def births_data():
 
 
 
-
+# Tableau de bord ------------------------------------------------------------------Tableau de bord
 
 @app.route('/dashboard')
 def dashboard():
@@ -312,7 +321,7 @@ def dashboard():
     
     return render_template('pages/dashboard.html', region=region, data=data, annees=annees, data_coton=data_coton)
 
-
+#--------------------------------------Fiche synoptique
 #Fiche synoptique
 @app.route('/fiche-synoptique')
 def fiche_synoptique():
@@ -364,7 +373,7 @@ def fiche_synoptique():
 
 
 
-
+#------------------------------Page accueil avec les fonctions de statistiques
 @app.route('/statistiques')
 def statistiques():
     # Charger le fichier GeoJSON
@@ -417,7 +426,7 @@ def statistiques():
 
 
 
-
+#---------------------------------------------------Home page pour accueil
 @app.route('/')
 def list_regions():
     regions = qr.options_regions()
@@ -466,7 +475,6 @@ def autocomplete_indicateur():
     return jsonify(results)
 
 
-
 # Obtenir la région en fonction de l'indicateur
 @app.route('/get_regions', methods=['GET'])
 def get_regions():
@@ -474,7 +482,6 @@ def get_regions():
     df = qr.get_data_from_mysql()  # Récupère les données
     regions = df[df['indicateur'] == indicateur]['region'].dropna().sort_values().unique()
     return jsonify(list(regions))
-
 # Route pour récupérer les départements en fonction de la région sélectionnée
 @app.route('/get_departements', methods=['GET'])
 def get_departements():
@@ -491,6 +498,14 @@ def get_sous_prefectures():
     sous_prefectures = df[df['departement'] == departement]['sousprefecture'].sort_values().unique()
     return jsonify(list(sous_prefectures))
 
+
+
+
+
+from flask import render_template, request, session
+import pandas as pd
+from io import StringIO
+
 @app.route('/request_indicateur', methods=['GET', 'POST'])
 def request_indicateur():
     # Charger les données depuis MySQL
@@ -498,130 +513,56 @@ def request_indicateur():
     
     # Obtenir les options pour chaque filtre (indicateur, région, etc.)
     indicateurs_options = qr.options_indicateur()
-
-    # Initialiser les filtres par défaut
-    region_SELECT = None
-    departement_SELECT = None
-    sousprefecture_SELECT = None
     indicateur_SELECT = None
+    df_filtered = pd.DataFrame()
 
-    # Logique pour POST (lorsque l'utilisateur soumet un formulaire)
-    if request.method == 'POST':
-        # Récupérer les sélections de l'utilisateur
-        region_SELECT = request.form.get('region')
-        departement_SELECT = request.form.get('departement')
-        sousprefecture_SELECT = request.form.get('sous_prefecture')
-        indicateur_SELECT = request.form.get('indicateur_elastic')
-
-        print(f"POST - Région: {region_SELECT}, Département: {departement_SELECT}, Sous-préfecture: {sousprefecture_SELECT}, Indicateur: {indicateur_SELECT}")
-
-    # Logique pour GET (lorsqu'un paramètre est passé dans l'URL)
     if request.method == 'GET':
         indicateur_SELECT = request.args.get('indicateur_elastic')
-
-        print(f"GET - Indicateur: {indicateur_SELECT}")
-
-        # Appliquer les filtres (indicateur, région, etc.)
+        
+        # Appliquer les filtres (indicateur, etc.)
         df_filtered = df.drop(columns=['statut_approbation', 'id'], errors='ignore')
-
-
+        
         if indicateur_SELECT and 'indicateur' in df_filtered.columns:
-            df_filtered = df_filtered[df_filtered['indicateur'].str.strip().str.lower() == indicateur_SELECT.strip().lower()]
-            print(f"Indicateur sélectionné: {indicateur_SELECT}")
-
-        if not df_filtered.empty and region_SELECT and 'region' in df_filtered.columns:
-            df_filtered = df_filtered[df_filtered['region'] == region_SELECT]
-            print(f"Région sélectionnée: {region_SELECT}")
-
-        if not df_filtered.empty and departement_SELECT and 'departement' in df_filtered.columns:
-            df_filtered = df_filtered[df_filtered['departement'] == departement_SELECT]
-            print(f"Département sélectionné: {departement_SELECT}")
-
-        if not df_filtered.empty and sousprefecture_SELECT and 'sousprefecture' in df_filtered.columns:
-            df_filtered = df_filtered[df_filtered['sousprefecture'] == sousprefecture_SELECT]
-            df_filtered = df_filtered.drop(columns=['region', 'departement'], errors='ignore')
-            print(f"Sous-préfecture sélectionnée: {sousprefecture_SELECT}")
+            # Convertir la colonne 'indicateur' en chaînes de caractères
+            df_filtered['indicateur'] = df_filtered['indicateur'].astype(str).str.strip().str.lower()
+            
+            # Appliquer le filtre sur la colonne 'indicateur'
+            df_filtered = df_filtered[df_filtered['indicateur'] == indicateur_SELECT.strip().lower()]
 
         # Supprimer les colonnes contenant uniquement des NaN
         df_filtered = df_filtered.dropna(axis=1, how='all')
-        print("DataFrame filtré avant suppression des NaN:\n", df_filtered)
 
-        # Vérifier si le DataFrame filtré est vide
-        if df_filtered.empty:
-            message = "Aucune donnée disponible pour les critères sélectionnés."
-            return render_template('result.html', available_columns=[], message=message)
-        
-        # Si le DataFrame contient des données, normaliser les valeurs de la colonne 'indicateur'
-        if 'indicateur' in df_filtered.columns:
-            df_filtered['indicateur'] = df_filtered['indicateur'].str.strip().str.lower()
-            print(df_filtered.head())
+        # Remplacer les valeurs manquantes par des chaînes vides
+        df_filtered = df_filtered.fillna('---')
 
-        # Vérifier si le DataFrame filtré est vide après toutes les opérations
-        if df_filtered.empty:
-            message = "Aucune donnée disponible après le filtrage."
-            return render_template('result.html', available_columns=[], message=message)
+        # Vérifier si la colonne 'valeur' existe avant de la déplacer
+        if 'valeur' in df_filtered.columns:
+            df_filtered = df_filtered[[col for col in df_filtered.columns if col != 'valeur'] + ['valeur']]
         else:
-            # Stocker le DataFrame filtré dans la session au format JSON
-        
-            df_filtered_json = StringIO()
-            df_filtered.to_json(df_filtered_json)
-            session['df_filtered'] = df_filtered_json.getvalue()
+            print("La colonne 'valeur' n'existe pas dans le DataFrame filtré.")
 
-            # Obtenir les colonnes disponibles pour la zone de dépôt
-            available_columns = list(df_filtered.columns)
-            defintions = qr.definition_indicateur(indicateur_choisi=indicateur_SELECT)
-            mode_calcul = qr.mode_calcul_indicateur(mode_calcul=indicateur_SELECT)
-
-            print('Définitions de l\'indicateur:', defintions)
-            print('Mode de calcul:', mode_calcul)
-
-            # Afficher la page résultat avec les colonnes disponibles
-            return render_template('result.html', available_columns=available_columns, 
-                                indicateur_SELECT=indicateur_SELECT,
-                                defintions=defintions,
-                                mode_calcul=mode_calcul)
-
-    # Si GET, afficher la page de sélection avec les options de filtre
-    regions = df['region'].dropna().sort_values().unique()
-    departements = df['departement'].dropna().sort_values().unique()
-    sous_prefectures = df['sousprefecture'].dropna().sort_values().unique()
+        # Stocker le DataFrame filtré dans la session pour l'afficher
+        df_filtered_json = df_filtered.to_dict(orient='split')
+        session['df_filtered'] = df_filtered_json
 
     return render_template(
         'requete_indicateur.html',
         indicateurs=indicateurs_options,
-        regions=regions,
-        departements=departements,
-        sous_prefectures=sous_prefectures,
-        indicateur2=indicateur_SELECT
+        indicateur2=indicateur_SELECT,
+        df_filtered=df_filtered_json  # Assurez-vous que df_filtered_json est correctement passé au template
     )
 
 
+@app.route('/search_boostrap', methods=['GET', 'POST'])
+def search_boostrap():
+    return render_template('boostrap_search.html')
+
+ 
+
+import io
 
 
-# Route pour générer le tableau croisé
-@app.route('/generate_pivot_table', methods=['POST'])
-def generate_pivot_table():
-    data = request.get_json()
-    selected_columns = data.get('columns', [])
 
-    # Recharger le DataFrame filtré depuis la session
-    df_filtered_json = session.get('df_filtered', None)
-
-    if df_filtered_json:
-        # Convertir le JSON en DataFrame
-        df = pd.read_json(df_filtered_json)
-        
-        if selected_columns:
-            # Filtrer le DataFrame pour ne conserver que les colonnes sélectionnées
-            df_filtered = df[selected_columns]
-
-            # Convertir en HTML pour l'affichage dans la table
-            table_html = df_filtered.to_html(classes='table table-bordered', index=False)
-
-            return jsonify({"table_html": table_html})
-
-    # Si aucune colonne sélectionnée ou DataFrame vide, renvoyer un message par défaut
-    return jsonify({"table_html": "<p>Aucune colonne sélectionnée</p>"})
 
 
 
@@ -641,7 +582,8 @@ def download_excel():
         df = pd.read_json(df_filtered_json)
 
         # Générer le tableau croisé dynamique en utilisant les colonnes sélectionnées
-        pivot_table = pd.pivot_table(df, index=selected_columns)
+        # Utiliser une fonction d'agrégation qui gère les données non numériques
+        pivot_table = pd.pivot_table(df, index=selected_columns, aggfunc='first')
 
         # Créer un fichier Excel en mémoire
         output = io.BytesIO()

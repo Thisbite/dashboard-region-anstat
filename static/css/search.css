@@ -62,3 +62,93 @@ a {
     text-align: center;
     margin-top: 20px;
 }
+
+
+
+.header-secondary {
+    background-color: #f8f9fa;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+}
+
+.nav-links {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.nav-links a {
+    text-decoration: none;
+    color: #4204d4;
+    padding: 10px 20px;
+    font-size: 18px;
+    margin: 0 10px;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+.nav-links a:hover {
+    background-color: #007bff;
+    color: white;
+}
+
+.search-bar {
+    display: flex;
+    align-items: center;
+}
+
+.search-bar input[type="text"] {
+    padding: 8px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 300px;
+    margin-right: 10px;
+}
+
+.search-bar button {
+    padding: 8px 12px;
+    background-color: #004085;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.search-bar button:hover {
+    background-color: #003060;
+}
+/* Marquee peut être personnalisé pour plus d'options */
+marquee {
+    white-space: nowrap;       /* Empêche le texte de passer à la ligne */
+}
+
+.flash-info-bar a {
+    text-decoration: none;  /* Enlève le soulignement */
+    color: inherit;  /* Utilise la même couleur que le texte environnant */
+    font-weight: bold;  /* Rend le texte des liens en gras (optionnel) */
+}
+
+.flash-info-bar {
+  
+    padding: 10px;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    overflow: hidden;
+    border-radius: 8px;
+}
+
+/* Styles pour la barre de flash infos */
+.flash-info-bar {
+    background-color: #007bff; /* Couleur de fond */
+    color: white;               /* Couleur du texte */
+    padding: 10px;             /* Espacement interne */
+    font-size: 16px;           /* Taille de police */
+    font-weight: bold;         /* Texte en gras */
+    position: relative;        /* Pour le positionnement relatif */
+    z-index: 10;               /* Assurer que la barre est au-dessus d'autres éléments */
+}
